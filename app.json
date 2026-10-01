@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "FitAI",
+    "slug": "fitai",
+    "scheme": "fitai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "experiments": { "typedRoutes": true },
+    "plugins": ["expo-router"],
+    "ios": { "supportsTablet": true },
+    "android": { "edgeToEdgeEnabled": true },
+    "web": { "bundler": "metro", "output": "static" }
+  }
+}

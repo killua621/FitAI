@@ -1,0 +1,77 @@
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useLocalSearchParams, router } from 'expo-router';
+import { Brand } from '@/components/Brand';
+import { AppTabBar } from '@/components/AppTabBar';
+import { Button } from '@/components/Button';
+import { Screen } from '@/components/Screen';
+import { theme } from '@/theme';
+import { homePreview } from '@/features/home/mockData';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { WaterTracker } from '@/features/nutrition/WaterTracker';
+
+function SectionHeader({ title, eyebrow }: { title: string; eyebrow: string }) {
+  return <View style={styles.sectionHeader}><View><Text style={styles.sectionEyebrow}>{eyebrow}</Text><Text style={styles.sectionTitle}>{title}</Text></View><View style={styles.sectionRule} /></View>;
+}
+
+export default function HomeScreen() {
+  const { profile } = useAuth();
+  const { width } = useWindowDimensions();
+  const { name, goal, trainingDays } = useLocalSearchParams<{ name?: string; goal?: string; trainingDays?: string }>();
+  const wide = width >= 800;
+  const firstName = (profile?.display_name || name || 'Atleta').split(' ')[0];
+  const planGoal = profile?.goal || goal || 'Ganhar massa muscular';
+  const daysPerWeek = String(profile?.training_days || trainingDays || '3');
+
+  return (
+    <Screen scroll footer={<AppTabBar active="/home" />} style={styles.screen}>
+      <View style={styles.nav}><Brand /><Text style={styles.navLabel}>SEU ESPAÇO DE EVOLUÇÃO</Text><Pressable onPress={() => router.replace({ pathname: '/profile', params: { name, goal, trainingDays } })} style={styles.avatar}><Text style={styles.avatarText}>{firstName.charAt(0).toUpperCase()}</Text></Pressable></View>
+      <View style={styles.intro}><View><Text style={styles.eyebrow}>{homePreview.dateLabel}</Text><Text style={styles.heading}>Vamos nessa, {firstName}.</Text><Text style={styles.subheading}>Um bom dia começa com um passo na direção certa.</Text></View></View>
+
+      <View style={[styles.summaryGrid, wide ? styles.summaryGridWide : styles.summaryGridNarrow]}>
+        <View style={[styles.focusCard, wide && styles.focusCardWide]}>
+          <View style={styles.focusTop}><View style={styles.focusPill}><View style={styles.liveDot} /><Text style={styles.focusPillText}>SEU FOCO</Text></View><Text style={styles.focusIndex}>01 / 03</Text></View>
+          <Text style={styles.focusTitle}>{planGoal}</Text>
+          <Text style={styles.focusCopy}>Consistência primeiro. O resto vem com o tempo.</Text>
+          <View style={styles.focusProgressLabels}><Text style={styles.focusProgressLabel}>SUA JORNADA</Text><Text style={styles.focusProgressPercent}>12%</Text></View>
+          <View style={styles.progressTrack}><View style={styles.progressFill} /></View>
+          <View style={styles.focusFooter}><Text style={styles.focusFooterText}>COMEÇOU AGORA</Text><Text style={styles.focusFooterText}>{daysPerWeek} DIAS / SEMANA</Text></View>
+          <View style={styles.focusOrb}><Text style={styles.focusOrbText}>F</Text></View>
+        </View>
+        <View style={styles.weekCard}>
+          <View style={styles.weekTop}><View><Text style={styles.cardEyebrow}>ESTA SEMANA</Text><Text style={styles.weekTitle}>Seu ritmo</Text></View><View style={styles.weekIcon}><Text style={styles.weekIconText}>↗</Text></View></View>
+          <View style={styles.weekNumbers}><Text style={styles.weekNumber}>{homePreview.weeklyCompletion}<Text style={styles.weekNumberTotal}>/{daysPerWeek}</Text></Text><View><Text style={styles.weekNumberCaption}>treino concluído</Text><Text style={styles.weekNumberCaption}>de {daysPerWeek} dias</Text></View></View>
+          <View style={styles.weekDays}>{['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((day, index) => <View key={index} style={styles.weekDay}><View style={[styles.dayDot, index === 0 && styles.dayDone]}><Text style={[styles.dayMark, index === 0 && styles.dayMarkDone]}>{index === 0 ? '✓' : day}</Text></View><Text style={styles.dayCaption}>{day}</Text></View>)}</View>
+          <Text style={styles.weekFoot}>Cada treino conta. Continue.</Text>
+        </View>
+      </View>
+
+      <View style={styles.hydrationSection}><SectionHeader eyebrow="HÁBITO DO DIA" title="Cuide do seu ritmo" /><WaterTracker compact /></View>
+      <SectionHeader eyebrow="RESUMO DO DIA" title="Seu plano" />
+      <View style={[styles.shortcutGrid, wide && styles.shortcutGridWide]}>
+        <Pressable accessibilityRole="button" onPress={() => router.replace({ pathname: '/workout', params: { name, goal, trainingDays } })} style={styles.shortcutCard}>
+          <View style={styles.shortcutTop}><View style={styles.shortcutIcon}><Text style={styles.shortcutIconText}>◉</Text></View><Text style={styles.shortcutArrow}>↗</Text></View>
+          <Text style={styles.shortcutEyebrow}>TREINO DE HOJE</Text><Text style={styles.shortcutTitle}>Corpo todo, 35 min</Text><Text style={styles.shortcutCopy}>4 movimentos para começar com confiança.</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" onPress={() => router.replace({ pathname: '/nutrition', params: { name, goal, trainingDays } })} style={styles.shortcutCard}>
+          <View style={styles.shortcutTop}><View style={[styles.shortcutIcon, styles.shortcutIconAlt]}><Text style={styles.shortcutIconText}>＋</Text></View><Text style={styles.shortcutArrow}>↗</Text></View>
+          <Text style={styles.shortcutEyebrow}>ALIMENTAÇÃO</Text><Text style={styles.shortcutTitle}>Ideias para o seu dia</Text><Text style={styles.shortcutCopy}>Refeições e registro de hidratação</Text>
+        </Pressable>
+      </View>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { paddingTop: 7, justifyContent: 'space-between' }, nav: { minHeight: 55, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: theme.colors.line, marginBottom: 33 }, navLabel: { color: theme.colors.muted, fontSize: 9, letterSpacing: 1.4, fontWeight: '700', marginLeft: 'auto', marginRight: 20 }, avatar: { width: 38, height: 38, borderRadius: 20, backgroundColor: theme.colors.brown, alignItems: 'center', justifyContent: 'center' }, avatarText: { color: theme.colors.white, fontSize: 15, fontWeight: '800' }, intro: { marginBottom: 23 }, eyebrow: { color: theme.colors.orangeDeep, fontSize: 10, letterSpacing: 1.4, fontWeight: '900', marginBottom: 8 }, heading: { color: theme.colors.ink, fontSize: 31, letterSpacing: -0.8, fontWeight: '900' }, subheading: { color: theme.colors.muted, fontSize: 14, marginTop: 7 }, summaryGrid: { gap: 16, marginBottom: 34 }, summaryGridWide: { flexDirection: 'row' }, summaryGridNarrow: { flexDirection: 'column' }, focusCard: { minHeight: 265, borderRadius: 25, backgroundColor: theme.colors.dark, padding: 23, overflow: 'hidden' }, focusCardWide: { flex: 1.45 }, focusTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, focusPill: { height: 28, borderRadius: 14, backgroundColor: '#30231C', paddingHorizontal: 11, flexDirection: 'row', alignItems: 'center', gap: 7 }, liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: theme.colors.orange }, focusPillText: { fontSize: 9, letterSpacing: 1.1, color: '#E6D5C9', fontWeight: '800' }, focusIndex: { color: '#9A8474', fontSize: 10, letterSpacing: 1, fontWeight: '700' }, focusTitle: { color: theme.colors.white, fontSize: 24, fontWeight: '800', marginTop: 25, maxWidth: 350 }, focusCopy: { color: '#B8A89D', fontSize: 13, marginTop: 7 }, focusProgressLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 24, marginBottom: 9, maxWidth: 370 }, focusProgressLabel: { fontSize: 9, letterSpacing: 1.2, color: '#B8A89D', fontWeight: '700' }, focusProgressPercent: { color: theme.colors.orange, fontWeight: '800', fontSize: 11 }, progressTrack: { height: 6, borderRadius: 4, backgroundColor: '#433329', overflow: 'hidden', maxWidth: 370 }, progressFill: { width: '12%', height: 6, borderRadius: 4, backgroundColor: theme.colors.orange }, focusFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14, maxWidth: 370 }, focusFooterText: { color: '#A38F81', fontSize: 8, letterSpacing: 1, fontWeight: '800' }, focusOrb: { position: 'absolute', width: 175, height: 175, borderRadius: 88, borderWidth: 1, borderColor: '#3B2A20', right: -38, bottom: -63, alignItems: 'center', justifyContent: 'center' }, focusOrbText: { color: '#30231C', fontSize: 95, fontWeight: '900' }, weekCard: { minHeight: 265, borderRadius: 25, borderWidth: 1, borderColor: theme.colors.line, backgroundColor: theme.colors.surface, padding: 22 }, weekTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, cardEyebrow: { color: theme.colors.muted, fontSize: 9, letterSpacing: 1.2, fontWeight: '800' }, weekTitle: { color: theme.colors.ink, fontSize: 19, fontWeight: '800', marginTop: 4 }, weekIcon: { width: 34, height: 34, borderRadius: 12, backgroundColor: theme.colors.orangeSoft, alignItems: 'center', justifyContent: 'center' }, weekIconText: { color: theme.colors.orangeDeep, fontSize: 19, fontWeight: '700' }, weekNumbers: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 20 }, weekNumber: { color: theme.colors.ink, fontSize: 32, fontWeight: '900' }, weekNumberTotal: { color: theme.colors.muted, fontSize: 16, fontWeight: '600' }, weekNumberCaption: { color: theme.colors.muted, fontSize: 11, lineHeight: 16 }, weekDays: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }, weekDay: { alignItems: 'center', gap: 6 }, dayDot: { width: 29, height: 29, borderRadius: 15, backgroundColor: theme.colors.background, alignItems: 'center', justifyContent: 'center' }, dayDone: { backgroundColor: theme.colors.orange }, dayMark: { color: theme.colors.muted, fontSize: 9, fontWeight: '700' }, dayMarkDone: { color: theme.colors.dark }, dayCaption: { color: theme.colors.muted, fontSize: 8 }, weekFoot: { color: theme.colors.brown, fontSize: 11, fontWeight: '700', marginTop: 13 }, hydrationSection: { marginBottom: 24 }, sectionHeader: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 14, gap: 17 }, sectionEyebrow: { color: theme.colors.orangeDeep, fontSize: 9, letterSpacing: 1.3, fontWeight: '800', marginBottom: 5 }, sectionTitle: { color: theme.colors.ink, fontSize: 21, fontWeight: '900', letterSpacing: -0.4 }, sectionRule: { height: 1, backgroundColor: theme.colors.line, flex: 1, marginBottom: 5 }, workoutCard: { backgroundColor: theme.colors.surface, borderRadius: 25, borderWidth: 1, borderColor: theme.colors.line, padding: 13, marginBottom: 34 }, workoutCardWide: { flexDirection: 'row', gap: 22 }, workoutArt: { width: '100%', minHeight: 210, borderRadius: 18, backgroundColor: theme.colors.brown, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, workoutArtWide: { width: '36%' }, workoutRing: { width: 145, height: 145, borderRadius: 74, borderWidth: 1, borderColor: '#9C6A4C', alignItems: 'center', justifyContent: 'center', backgroundColor: '#714832' }, workoutGlyph: { fontSize: 67, color: theme.colors.orange }, workoutArtLabel: { position: 'absolute', left: 16, bottom: 14, color: '#E2C8B7', fontSize: 8, letterSpacing: 1.5, fontWeight: '800' }, workoutInfo: { flex: 1, padding: 8, justifyContent: 'center' }, workoutMeta: { flexDirection: 'row', alignItems: 'center', gap: 11, flexWrap: 'wrap' }, workoutEyebrow: { color: theme.colors.orangeDeep, fontSize: 9, letterSpacing: 1.1, fontWeight: '900' }, levelPill: { paddingHorizontal: 9, paddingVertical: 5, backgroundColor: theme.colors.brownLight, borderRadius: 10 }, levelText: { color: theme.colors.brown, fontSize: 8, letterSpacing: 0.8, fontWeight: '800' }, workoutTitle: { color: theme.colors.ink, fontSize: 25, lineHeight: 29, fontWeight: '900', marginTop: 12 }, workoutCopy: { color: theme.colors.muted, fontSize: 13, lineHeight: 19, marginTop: 7 }, workoutBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 19, gap: 10, flexWrap: 'wrap' }, duration: { flexDirection: 'row', alignItems: 'center', gap: 7 }, durationIcon: { color: theme.colors.brown, fontSize: 16 }, durationText: { color: theme.colors.muted, fontSize: 11, fontWeight: '600' }, metaDivider: { width: 1, height: 14, backgroundColor: theme.colors.line, marginHorizontal: 2 }, workoutButton: { minHeight: 46, paddingHorizontal: 18 }, habitsRow: { flexDirection: 'row', gap: 14, flexWrap: 'wrap' }, shortcutGrid: { gap: 14, marginBottom: 24 }, shortcutGridWide: { flexDirection: 'row' }, shortcutCard: { flex: 1, minHeight: 165, borderRadius: 22, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 19, marginBottom: 3 }, shortcutTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13 }, shortcutIcon: { width: 37, height: 37, borderRadius: 13, backgroundColor: theme.colors.brownLight, alignItems: 'center', justifyContent: 'center' }, shortcutIconAlt: { backgroundColor: theme.colors.orangeSoft }, shortcutIconText: { color: theme.colors.orangeDeep, fontSize: 19, fontWeight: '800' }, shortcutArrow: { color: theme.colors.brown, fontSize: 17 }, shortcutEyebrow: { color: theme.colors.orangeDeep, fontSize: 8, letterSpacing: 1.1, fontWeight: '900' }, shortcutTitle: { color: theme.colors.ink, fontSize: 17, fontWeight: '900', marginTop: 5 }, shortcutCopy: { color: theme.colors.muted, fontSize: 11, marginTop: 5 }, habitCard: { flex: 1, minWidth: 240, minHeight: 160, borderRadius: 21, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 19, marginBottom: 22 }, habitCardWide: { minWidth: 0 }, habitTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, habitIcon: { width: 37, height: 37, borderRadius: 13, backgroundColor: theme.colors.orangeSoft, alignItems: 'center', justifyContent: 'center' }, mealIcon: { backgroundColor: theme.colors.brownLight }, habitEmoji: { color: theme.colors.orangeDeep, fontSize: 23, fontWeight: '700' }, habitLink: { color: theme.colors.muted, fontSize: 8, letterSpacing: 1.2, fontWeight: '800' }, habitValue: { color: theme.colors.ink, fontSize: 21, fontWeight: '900', marginTop: 12 }, habitUnit: { color: theme.colors.muted, fontSize: 13, fontWeight: '600' }, habitLabel: { color: theme.colors.muted, fontSize: 11, marginTop: 4 }, waterTrack: { height: 5, borderRadius: 4, backgroundColor: theme.colors.brownLight, marginTop: 12 }, waterFill: { width: '60%', height: 5, borderRadius: 4, backgroundColor: theme.colors.orange }, mealBadge: { alignSelf: 'flex-start', backgroundColor: theme.colors.brownLight, borderRadius: 10, paddingHorizontal: 9, paddingVertical: 6, marginTop: 10 }, mealBadgeText: { color: theme.colors.brown, fontSize: 8, letterSpacing: 0.7, fontWeight: '800' }, bottomNav: { borderTopWidth: 1, borderTopColor: theme.colors.line, flexDirection: 'row', justifyContent: 'space-around', paddingTop: 16, paddingBottom: 7, marginTop: 8 }, bottomNavItem: { alignItems: 'center', gap: 4 }, bottomNavActive: { alignItems: 'center', gap: 4 }, bottomNavIconActive: { color: theme.colors.orangeDeep, fontSize: 21 }, bottomNavIcon: { color: '#A5968C', fontSize: 20 }, bottomNavActiveLabel: { color: theme.colors.ink, fontSize: 10, fontWeight: '800' }, bottomNavLabel: { color: theme.colors.muted, fontSize: 10 },
+});
+
+
+
+
+
+
+
+
+
+
+
