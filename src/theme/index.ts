@@ -1,7 +1,8 @@
 export const theme = {
   colors: {
     background: '#100D0B',
-    surface: '#1C1714',
+    surface: '#211A16',
+    surfaceRaised: '#2B211B',
     ink: '#F7F1EC',
     muted: '#B5A69B',
     line: '#392D26',
@@ -10,9 +11,9 @@ export const theme = {
     brown: '#DEA17F',
     brownSurface: '#5B3927',
     brownLight: '#38271F',
-    orange: '#F4773E',
-    orangeDeep: '#FF9464',
-    orangeSoft: '#3A241B',
+    orange: '#FF7B3F',
+    orangeDeep: '#FFA06F',
+    orangeSoft: '#422519',
     white: '#FFFFFF',
     sage: '#A8B393',
   },

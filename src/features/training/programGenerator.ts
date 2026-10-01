@@ -3,6 +3,8 @@ export type TrainingProfile = {
   goal?: string | null;
   experience_level?: string | null;
   training_days?: number | null;
+  training_emphasis?: 'automatic' | 'balanced' | 'lower_body' | 'upper_body' | null;
+  energy_equation_profile?: 'female' | 'male' | null;
 };
 
 export type Exercise = { name: string; focus: string; sets: number; reps: string; rest: string };
@@ -60,6 +62,12 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
   const beginner = profile.experience_level === 'Estou começando';
   const sets = beginner ? 2 : 3;
   const reps = goal === 'Melhorar condicionamento' ? '10–15' : '8–12';
+  const requestedEmphasis = profile.training_emphasis || 'automatic';
+  const emphasis = requestedEmphasis === 'automatic'
+    ? profile.energy_equation_profile === 'female' ? 'lower_body' : profile.energy_equation_profile === 'male' ? 'upper_body' : 'balanced'
+    : requestedEmphasis;
+  const lowerFocus = /quadríceps|glúteos|coxa|panturrilha|posterior/i;
+  const upperFocus = /peito|tríceps|costas|bíceps|ombros|ombro/i;
   const templates = templatesByDays[days];
   const sessions = templates.map((session, index) => ({
     id: `workout-${index + 1}`,
@@ -68,18 +76,26 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
     duration: session.exercises.length >= 5 ? 45 : 40,
     exercises: session.exercises.map((exercise) => ({
       ...exercise,
-      sets,
+      sets: Math.min(4, sets + (emphasis === 'lower_body' && lowerFocus.test(exercise.focus) ? 1 : 0) + (emphasis === 'upper_body' && upperFocus.test(exercise.focus) ? 1 : 0)),
       reps: exercise.reps || reps,
       rest: exercise.rest || '90–120 s',
     })),
   }));
 
-  const title = goal === 'Perder gordura'
+  const title = emphasis === 'lower_body'
+    ? 'Força · foco em pernas e glúteos'
+    : emphasis === 'upper_body'
+      ? 'Força · foco em tronco e braços'
+      : goal === 'Perder gordura'
     ? 'Força para todo objetivo'
     : goal === 'Melhorar condicionamento'
       ? 'Força + condicionamento'
       : 'Plano de força progressiva';
-  const subtitle = goal === 'Ganhar massa muscular'
+  const subtitle = emphasis === 'lower_body'
+    ? 'Mais séries para membros inferiores, mantendo o corpo todo no plano.'
+    : emphasis === 'upper_body'
+      ? 'Mais séries para tronco e braços, com pernas também presentes na rotina.'
+      : goal === 'Ganhar massa muscular'
     ? 'Foco em hipertrofia, técnica estável e progressão gradual.'
     : goal === 'Perder gordura'
       ? 'Treino de força para manter desempenho e construir consistência.'
@@ -97,4 +113,3 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
       : 'Para adultos, a OMS recomenda acumular 150–300 min de atividade moderada (ou 75–150 min vigorosa) por semana e fortalecer os principais grupos musculares em 2 ou mais dias. Comece de onde está; ganhar massa não exige zerar o cardio.',
   };
 }
-

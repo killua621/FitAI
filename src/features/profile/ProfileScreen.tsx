@@ -18,6 +18,7 @@ export default function ProfileScreen() {
   const [age, setAge] = useState('');
   const [height, setHeight] = useState('');
   const [goal, setGoal] = useState(goals[0]);
+  const [trainingEmphasis, setTrainingEmphasis] = useState<'automatic' | 'balanced' | 'lower_body' | 'upper_body'>('automatic');
   const [target, setTarget] = useState('');
   const [weighIn, setWeighIn] = useState('');
   const [saving, setSaving] = useState(false);
@@ -27,6 +28,7 @@ export default function ProfileScreen() {
     if (!profile) return;
     setName(profile.display_name || ''); setAge(profile.age ? String(profile.age) : '');
     setHeight(profile.height_cm ? String(profile.height_cm) : ''); setGoal(profile.goal || goals[0]);
+    setTrainingEmphasis(profile.training_emphasis || 'automatic');
     const suggested = suggestWeightMilestone(profile);
     setTarget(profile.weight_goal_kg ? String(profile.weight_goal_kg) : suggested ? String(suggested) : '');
   }, [profile?.id]);
@@ -50,7 +52,7 @@ export default function ProfileScreen() {
     try {
       const newTarget = target ? num(target) : null;
       await saveProfile({ ...profile, display_name: name.trim() || 'Atleta', age: age ? num(age) : null,
-        height_cm: height ? num(height) : null, goal, weight_goal_kg: newTarget,
+        height_cm: height ? num(height) : null, goal, training_emphasis: trainingEmphasis, weight_goal_kg: newTarget,
         weight_goal_start_kg: newTarget === profile.weight_goal_kg && goal === profile.goal ? profile.weight_goal_start_kg : currentWeight });
       Alert.alert('Perfil atualizado', 'Suas informações e recomendações já foram atualizadas.');
     } catch (error) { Alert.alert('Não foi possível salvar', error instanceof Error ? error.message : 'Tente novamente.'); }
@@ -81,6 +83,9 @@ export default function ProfileScreen() {
         <Text style={styles.label}>Nome</Text><TextInput value={name} onChangeText={setName} placeholder="Seu nome" placeholderTextColor={theme.colors.muted} style={styles.input} />
         <View style={styles.row}><View style={styles.field}><Text style={styles.label}>Idade</Text><TextInput value={age} onChangeText={setAge} keyboardType="number-pad" placeholder="Anos" placeholderTextColor={theme.colors.muted} style={styles.input} /></View><View style={styles.field}><Text style={styles.label}>Altura</Text><TextInput value={height} onChangeText={setHeight} keyboardType="number-pad" placeholder="cm" placeholderTextColor={theme.colors.muted} style={styles.input} /></View></View>
         <Text style={styles.label}>Objetivo principal</Text><View style={styles.choices}>{goals.map((item) => <Pressable key={item} onPress={() => { setGoal(item); if (item !== goal) { const suggested = suggestWeightMilestone({ age: profile?.age ?? null, height_cm: profile?.height_cm ?? null, weight_kg: currentWeight, goal: item }); setTarget(suggested ? String(suggested) : ''); } }} style={[styles.choice, goal === item && styles.choiceActive]}><Text style={[styles.choiceText, goal === item && styles.choiceTextActive]}>{item}</Text></Pressable>)}</View>
+        <Text style={styles.label}>Ênfase do treino</Text><Text style={styles.helper}>A sugestão automática considera o parâmetro fisiológico informado. Você pode mudar quando quiser.</Text><View style={styles.choices}>{[
+          ['automatic', 'Adaptar ao meu perfil'], ['balanced', 'Corpo todo equilibrado'], ['lower_body', 'Mais pernas e glúteos'], ['upper_body', 'Mais tronco e braços'],
+        ].map(([value, label]) => <Pressable key={value} accessibilityRole="radio" accessibilityState={{ checked: trainingEmphasis === value }} onPress={() => setTrainingEmphasis(value as typeof trainingEmphasis)} style={[styles.choice, trainingEmphasis === value && styles.choiceActive]}><Text style={[styles.choiceText, trainingEmphasis === value && styles.choiceTextActive]}>{label}</Text></Pressable>)}</View>
         <Text style={styles.label}>Próximo marco de peso · kg</Text><TextInput value={target} onChangeText={setTarget} keyboardType="decimal-pad" placeholder={goal === goals[0] ? 'Ex.: 64' : 'Ex.: 91'} placeholderTextColor={theme.colors.muted} style={styles.input} />
         <Text style={styles.helper}>Escolha uma etapa próxima e sustentável. Ao alcançar, defina o próximo marco aqui.</Text>
         <Button title={saving ? 'Salvando…' : 'Salvar meu perfil'} onPress={save} disabled={saving} style={styles.saveButton} />

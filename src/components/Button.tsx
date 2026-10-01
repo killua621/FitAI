@@ -33,10 +33,10 @@ export function Button({ title, onPress, variant = 'primary', disabled, style }:
 }
 
 const styles = StyleSheet.create({
-  button: { minHeight: 58, borderRadius: theme.radius.pill, backgroundColor: theme.colors.orange, paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  button: { minHeight: 56, borderRadius: 18, backgroundColor: theme.colors.orange, paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', boxShadow: '0px 5px 12px rgba(255,123,63,0.18)' },
   dark: { backgroundColor: theme.colors.dark },
   outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.colors.line },
-  label: { color: theme.colors.dark, fontSize: 15, fontWeight: '800' },
+  label: { color: theme.colors.dark, fontSize: 14, letterSpacing: 0.1, fontWeight: '900' },
   darkLabel: { color: theme.colors.white },
   arrow: { position: 'absolute', right: 22, color: theme.colors.dark, fontSize: 18, fontWeight: '700' },
   darkArrow: { color: theme.colors.orange },

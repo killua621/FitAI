@@ -17,6 +17,7 @@ export type Profile = {
   training_weekdays: string[];
   activity_level: 'low' | 'light' | 'moderate' | 'high' | null;
   energy_equation_profile: 'female' | 'male' | null;
+  training_emphasis: 'automatic' | 'balanced' | 'lower_body' | 'upper_body' | null;
 };
 
 type AuthContextValue = {

@@ -18,6 +18,7 @@ Revisado em 2026-10-01. Esta versão dá orientação educativa geral a adultos 
 - A instrução de esforço é terminar a série ainda conseguindo cerca de 2–3 repetições com técnica. Ao atingir o topo da faixa com controle em todas as séries, pode-se aumentar a carga gradualmente.
 - Ganho de massa não é sinônimo de poucas repetições e carga máxima. Cargas variadas podem produzir hipertrofia; consistência e volume semanal progressivo são mais úteis que falhar em toda série.
 - O app mantém atividade aeróbica como opção de saúde. Para adultos, a OMS recomenda 150–300 minutos moderados ou 75–150 vigorosos na semana, e fortalecimento dos principais grupos musculares em pelo menos 2 dias. Pessoas iniciantes devem aumentar a atividade gradualmente.
+- A ênfase automática é um ponto de partida configurável: o parâmetro feminino sugere um pouco mais de séries para pernas/glúteos e o masculino, para tronco/braços. A pessoa pode escolher distribuição equilibrada ou trocar o foco no perfil. Isso não representa necessidades biológicas universais; revisões sistemáticas encontraram potencial semelhante de hipertrofia relativa entre mulheres e homens saudáveis. Preferência, objetivos, recuperação e experiência devem guiar a programação individual.
 
 ## Alimentação
 
@@ -41,6 +42,7 @@ Revisado em 2026-10-01. Esta versão dá orientação educativa geral a adultos 
 ## Fontes
 
 - ACSM, *Resistance Training Prescription for Muscle Function, Hypertrophy, and Physical Performance in Healthy Adults* (2026): https://acsm.org/resistance-training-guidelines-update-2026/
+- Roberts et al., *Sex Differences in Resistance Training: A Systematic Review and Meta-Analysis* (2020): https://pubmed.ncbi.nlm.nih.gov/32218059/; Refalo et al., revisão bayesiana de hipertrofia relativa em adultos saudáveis (2025): https://pubmed.ncbi.nlm.nih.gov/40028215/
 - OMS, recomendações de atividade física para adultos: https://www.who.int/initiatives/behealthy/physical-activity/
 - Morton et al., meta-análise de proteína e treino resistido: https://pubmed.ncbi.nlm.nih.gov/28698222/
 - Jäger et al., posição da ISSN sobre proteína e exercício (1,4–2,0 g/kg/dia em adultos ativos): https://pmc.ncbi.nlm.nih.gov/articles/PMC5477153/
