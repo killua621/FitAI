@@ -1,43 +1,104 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { router } from 'expo-router';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AppTabBar } from '@/components/AppTabBar';
 import { Brand } from '@/components/Brand';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
-import { theme } from '@/theme';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { Alert } from 'react-native';
+import { suggestWeightMilestone } from '@/features/health/fitnessGuidance';
+import { theme } from '@/theme';
+
+const goals = ['Ganhar massa muscular', 'Perder gordura', 'Recomposição corporal'];
+const num = (value: string) => Number(value.replace(',', '.'));
 
 export default function ProfileScreen() {
-  const { profile, session, signOut } = useAuth();
-  const { name, goal, experience, trainingDays } = useLocalSearchParams<{ name?: string; goal?: string; experience?: string; trainingDays?: string }>();
-  const profileName = profile?.display_name || name || 'Atleta';
-  const profileGoal = profile?.goal || goal || 'Ganhar massa muscular';
-  const profileExperience = profile?.experience_level || experience || 'Estou começando';
-  const daysPerWeek = String(profile?.training_days || trainingDays || '3');
-  const activityLabels: Record<string, string> = { low: 'Baixa', light: 'Leve', moderate: 'Moderada', high: 'Alta' };
-  const preferences = [
-    { label: 'Objetivo', value: profileGoal },
-    { label: 'Experiência', value: profileExperience },
-    { label: 'Frequência', value: daysPerWeek + ' dias por semana' },
-    ...(profile?.activity_level ? [{ label: 'Atividade diária', value: activityLabels[profile.activity_level] || 'Não informada' }] : []),
-    ...(profile?.water_goal_ml ? [{ label: 'Meta de água personalizada', value: profile.water_goal_ml.toLocaleString('pt-BR') + ' ml/dia' }] : []),
-  ];
+  const { profile, session, signOut, saveProfile, addWeighIn, weightHistory } = useAuth();
+  const [name, setName] = useState('');
+  const [age, setAge] = useState('');
+  const [height, setHeight] = useState('');
+  const [goal, setGoal] = useState(goals[0]);
+  const [target, setTarget] = useState('');
+  const [weighIn, setWeighIn] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [savingWeight, setSavingWeight] = useState(false);
+
+  useEffect(() => {
+    if (!profile) return;
+    setName(profile.display_name || ''); setAge(profile.age ? String(profile.age) : '');
+    setHeight(profile.height_cm ? String(profile.height_cm) : ''); setGoal(profile.goal || goals[0]);
+    const suggested = suggestWeightMilestone(profile);
+    setTarget(profile.weight_goal_kg ? String(profile.weight_goal_kg) : suggested ? String(suggested) : '');
+  }, [profile?.id]);
+
+  const currentWeight = profile?.weight_kg ? Number(profile.weight_kg) : null;
+  const targetWeight = profile?.weight_goal_kg ? Number(profile.weight_goal_kg) : null;
+  const startWeight = profile?.weight_goal_start_kg ? Number(profile.weight_goal_start_kg) : currentWeight;
+  const direction = targetWeight && currentWeight ? Math.sign(targetWeight - (startWeight || currentWeight)) : 0;
+  const progress = targetWeight && currentWeight && startWeight && direction
+    ? Math.max(0, Math.min(100, Math.round(((currentWeight - startWeight) / (targetWeight - startWeight)) * 100)))
+    : targetWeight && currentWeight && currentWeight === targetWeight ? 100 : 0;
+  const reachedGoal = Boolean(targetWeight && currentWeight && (targetWeight > (startWeight || currentWeight) ? currentWeight >= targetWeight : targetWeight < (startWeight || currentWeight) ? currentWeight <= targetWeight : currentWeight === targetWeight));
+  const isFriday = new Date().getDay() === 5;
+
+  const save = async () => {
+    if (age && (num(age) < 1 || num(age) > 120)) return Alert.alert('Confira a idade', 'Informe uma idade válida.');
+    if (height && (num(height) < 80 || num(height) > 250)) return Alert.alert('Confira a altura', 'Informe a altura em centímetros.');
+    if (target && (num(target) < 20 || num(target) > 500)) return Alert.alert('Confira a meta', 'Informe um peso entre 20 e 500 kg.');
+    if (!profile) return Alert.alert('Perfil ainda carregando', 'Tente novamente em alguns segundos.');
+    setSaving(true);
+    try {
+      const newTarget = target ? num(target) : null;
+      await saveProfile({ ...profile, display_name: name.trim() || 'Atleta', age: age ? num(age) : null,
+        height_cm: height ? num(height) : null, goal, weight_goal_kg: newTarget,
+        weight_goal_start_kg: newTarget === profile.weight_goal_kg && goal === profile.goal ? profile.weight_goal_start_kg : currentWeight });
+      Alert.alert('Perfil atualizado', 'Suas informações e recomendações já foram atualizadas.');
+    } catch (error) { Alert.alert('Não foi possível salvar', error instanceof Error ? error.message : 'Tente novamente.'); }
+    finally { setSaving(false); }
+  };
+
+  const recordWeight = async () => {
+    const value = num(weighIn);
+    if (!weighIn || !Number.isFinite(value) || value < 20 || value > 500) return Alert.alert('Confira o peso', 'Informe um valor entre 20 e 500 kg.');
+    setSavingWeight(true);
+    try {
+      await addWeighIn(value);
+      setWeighIn('');
+      if (targetWeight && (targetWeight > (startWeight || value) ? value >= targetWeight : value <= targetWeight)) {
+        Alert.alert('Meta alcançada! 🎉', 'Que conquista. Quando quiser, defina uma nova etapa no seu perfil e continue no seu ritmo.');
+      } else Alert.alert('Pesagem registrada', 'Seu peso atual e seu progresso já foram atualizados.');
+    } catch (error) { Alert.alert('Não foi possível registrar', error instanceof Error ? error.message : 'Tente novamente.'); }
+    finally { setSavingWeight(false); }
+  };
+
   return (
     <Screen scroll footer={<AppTabBar active="/profile" />} style={styles.screen}>
       <View style={styles.top}><Brand /><Text style={styles.topLabel}>SEU PERFIL</Text></View>
-      <View style={styles.profileIntro}><View style={styles.avatar}><Text style={styles.avatarText}>G</Text></View><Text style={styles.eyebrow}>BEM-VINDO AO FITAI</Text><Text style={styles.title}>{profileName}</Text><Text style={styles.description}>Seu espaço, seu ritmo, sua evolução.</Text></View>
-      <View style={styles.card}><Text style={styles.cardEyebrow}>SUAS PREFERÊNCIAS</Text>{preferences.map((item, index) => <View key={item.label} style={[styles.preference, index === preferences.length - 1 && styles.last]}><View><Text style={styles.preferenceLabel}>{item.label}</Text><Text style={styles.preferenceValue}>{item.value}</Text></View><Text style={styles.chevron}>›</Text></View>)}</View>
-      <View style={styles.note}><Text style={styles.noteMark}>✳</Text><Text style={styles.noteText}>Seu perfil é salvo na sua conta. As regras do banco impedem que outros usuários acessem esses dados.</Text></View>
-      <Button title="Rever meu onboarding" variant="dark" onPress={() => router.replace({ pathname: '/onboarding', params: { name: profileName, goal: profileGoal, experience: profileExperience, trainingDays: daysPerWeek } })} style={styles.editButton} />
+      <View style={styles.profileIntro}><View style={styles.avatar}><Text style={styles.avatarText}>{(profile?.display_name || 'A')[0].toUpperCase()}</Text></View><Text style={styles.eyebrow}>SEU ESPAÇO, SEU RITMO</Text><Text style={styles.title}>{profile?.display_name || 'Seu perfil'}</Text><Text style={styles.description}>Atualize seus dados. O plano acompanha as mudanças.</Text></View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardEyebrow}>INFORMAÇÕES PESSOAIS</Text>
+        <Text style={styles.label}>Nome</Text><TextInput value={name} onChangeText={setName} placeholder="Seu nome" placeholderTextColor={theme.colors.muted} style={styles.input} />
+        <View style={styles.row}><View style={styles.field}><Text style={styles.label}>Idade</Text><TextInput value={age} onChangeText={setAge} keyboardType="number-pad" placeholder="Anos" placeholderTextColor={theme.colors.muted} style={styles.input} /></View><View style={styles.field}><Text style={styles.label}>Altura</Text><TextInput value={height} onChangeText={setHeight} keyboardType="number-pad" placeholder="cm" placeholderTextColor={theme.colors.muted} style={styles.input} /></View></View>
+        <Text style={styles.label}>Objetivo principal</Text><View style={styles.choices}>{goals.map((item) => <Pressable key={item} onPress={() => { setGoal(item); if (item !== goal) { const suggested = suggestWeightMilestone({ age: profile?.age ?? null, height_cm: profile?.height_cm ?? null, weight_kg: currentWeight, goal: item }); setTarget(suggested ? String(suggested) : ''); } }} style={[styles.choice, goal === item && styles.choiceActive]}><Text style={[styles.choiceText, goal === item && styles.choiceTextActive]}>{item}</Text></Pressable>)}</View>
+        <Text style={styles.label}>Próximo marco de peso · kg</Text><TextInput value={target} onChangeText={setTarget} keyboardType="decimal-pad" placeholder={goal === goals[0] ? 'Ex.: 64' : 'Ex.: 91'} placeholderTextColor={theme.colors.muted} style={styles.input} />
+        <Text style={styles.helper}>Escolha uma etapa próxima e sustentável. Ao alcançar, defina o próximo marco aqui.</Text>
+        <Button title={saving ? 'Salvando…' : 'Salvar meu perfil'} onPress={save} disabled={saving} style={styles.saveButton} />
+      </View>
+
+      <View style={styles.weightCard}>
+        <View style={styles.weightTop}><View><Text style={styles.cardEyebrow}>ACOMPANHAMENTO SEMANAL</Text><Text style={styles.weightTitle}>Seu peso, ao seu ritmo</Text></View><Text style={styles.weightIcon}>↗</Text></View>
+        <View style={styles.metrics}><View><Text style={styles.metricLabel}>PESO ATUAL</Text><Text style={styles.metricValue}>{currentWeight ? `${currentWeight.toLocaleString('pt-BR')} kg` : '—'}</Text></View><View><Text style={styles.metricLabel}>PRÓXIMO MARCO</Text><Text style={styles.metricValue}>{targetWeight ? `${targetWeight.toLocaleString('pt-BR')} kg` : 'Defina no perfil'}</Text></View></View>
+        {targetWeight ? <><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${progress}%` }]} /></View><Text style={styles.progressLabel}>{reachedGoal ? 'Etapa concluída! Escolha um novo marco acima.' : `${progress}% desta etapa · pesagens semanais ajudam a ver a tendência`}</Text></> : <Text style={styles.helper}>Ex.: 62 → 64 kg para ganhar massa, ou 95 → 91 kg para reduzir gradualmente.</Text>}
+        <View style={styles.weighRow}><TextInput value={weighIn} onChangeText={setWeighIn} keyboardType="decimal-pad" placeholder="Peso de hoje, ex.: 62,4" placeholderTextColor={theme.colors.muted} style={[styles.input, styles.weighInput]} /><Pressable disabled={savingWeight} onPress={recordWeight} style={styles.weighButton}><Text style={styles.weighButtonText}>{savingWeight ? 'Salvando…' : 'Registrar pesagem'}</Text></Pressable></View>
+        <Text style={styles.helper}>{isFriday ? 'Hoje é sexta: se fizer sentido para você, registre sua pesagem semanal.' : 'Sugestão: pese-se na sexta, em condições parecidas. Uma medida isolada oscila; observe a tendência.'}</Text>
+        {weightHistory.slice(0, 4).map((entry, index) => <View key={`${entry.measured_at}-${index}`} style={styles.historyRow}><Text style={styles.historyDate}>{new Date(entry.measured_at).toLocaleDateString('pt-BR')}</Text><Text style={styles.historyValue}>{Number(entry.weight_kg).toLocaleString('pt-BR')} kg</Text></View>)}
+      </View>
+
       <Text style={styles.email}>{session?.user.email}</Text>
       <Button title="Sair da conta" variant="outline" onPress={async () => { try { await signOut(); router.replace('/'); } catch (error) { Alert.alert('Não foi possível sair', error instanceof Error ? error.message : 'Tente novamente.'); } }} style={styles.signOut} />
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({ screen: { paddingTop: 7 }, top: { minHeight: 55, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: theme.colors.line, marginBottom: 34 }, topLabel: { color: theme.colors.muted, fontSize: 9, letterSpacing: 1.3, fontWeight: '800' }, profileIntro: { alignItems: 'center', paddingVertical: 20, marginBottom: 22 }, avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: theme.colors.brownSurface, alignItems: 'center', justifyContent: 'center', marginBottom: 17 }, avatarText: { color: theme.colors.orange, fontSize: 34, fontWeight: '900' }, eyebrow: { color: theme.colors.orangeDeep, fontSize: 9, letterSpacing: 1.4, fontWeight: '900' }, title: { color: theme.colors.ink, fontSize: 29, fontWeight: '900', marginTop: 6 }, description: { color: theme.colors.muted, fontSize: 13, marginTop: 5 }, card: { borderRadius: 22, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 19 }, cardEyebrow: { color: theme.colors.orangeDeep, fontSize: 9, letterSpacing: 1.3, fontWeight: '900', marginBottom: 5 }, preference: { minHeight: 68, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: theme.colors.line }, last: { borderBottomWidth: 0 }, preferenceLabel: { color: theme.colors.muted, fontSize: 10, fontWeight: '600' }, preferenceValue: { color: theme.colors.ink, fontSize: 14, fontWeight: '800', marginTop: 4 }, chevron: { color: theme.colors.brown, fontSize: 24 }, note: { flexDirection: 'row', alignItems: 'center', gap: 11, padding: 15, borderRadius: 17, backgroundColor: theme.colors.brownLight, marginTop: 14 }, noteMark: { color: theme.colors.orangeDeep, fontSize: 20 }, noteText: { flex: 1, color: theme.colors.brown, fontSize: 11, lineHeight: 17, fontWeight: '600' }, editButton: { marginTop: 17, marginBottom: 17 }, email: { color: theme.colors.muted, textAlign: 'center', fontSize: 11, marginTop: 3 }, signOut: { marginTop: 12, marginBottom: 25 } });
-
-
-
-
+const styles = StyleSheet.create({ screen: { paddingTop: 7 }, top: { minHeight: 55, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: theme.colors.line, marginBottom: 28 }, topLabel: { color: theme.colors.muted, fontSize: 9, letterSpacing: 1.3, fontWeight: '800' }, profileIntro: { alignItems: 'center', paddingVertical: 10, marginBottom: 22 }, avatar: { width: 76, height: 76, borderRadius: 38, backgroundColor: theme.colors.brownSurface, alignItems: 'center', justifyContent: 'center', marginBottom: 13 }, avatarText: { color: theme.colors.orange, fontSize: 31, fontWeight: '900' }, eyebrow: { color: theme.colors.orangeDeep, fontSize: 9, letterSpacing: 1.4, fontWeight: '900' }, title: { color: theme.colors.ink, fontSize: 28, fontWeight: '900', marginTop: 5 }, description: { color: theme.colors.muted, fontSize: 13, marginTop: 5, textAlign: 'center' }, card: { borderRadius: 22, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 19, marginBottom: 16 }, cardEyebrow: { color: theme.colors.orangeDeep, fontSize: 9, letterSpacing: 1.3, fontWeight: '900', marginBottom: 13 }, label: { color: theme.colors.ink, fontWeight: '800', fontSize: 12, marginBottom: 7, marginTop: 6 }, input: { minHeight: 47, borderRadius: 13, borderWidth: 1, borderColor: theme.colors.line, backgroundColor: theme.colors.background, paddingHorizontal: 13, fontSize: 14, color: theme.colors.ink, marginBottom: 8, outlineStyle: 'none' } as never, row: { flexDirection: 'row', gap: 12 }, field: { flex: 1 }, choices: { gap: 7, marginBottom: 8 }, choice: { minHeight: 39, paddingHorizontal: 12, justifyContent: 'center', borderRadius: 12, backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.line }, choiceActive: { backgroundColor: theme.colors.dark, borderColor: theme.colors.dark }, choiceText: { color: theme.colors.muted, fontSize: 11, fontWeight: '700' }, choiceTextActive: { color: theme.colors.orange }, helper: { color: theme.colors.muted, fontSize: 10, lineHeight: 15, marginTop: 3 }, saveButton: { marginTop: 14 }, weightCard: { borderRadius: 22, backgroundColor: theme.colors.dark, padding: 20, marginBottom: 15 }, weightTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, weightTitle: { color: theme.colors.white, fontSize: 19, fontWeight: '900' }, weightIcon: { color: theme.colors.orange, fontSize: 25 }, metrics: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 19, marginBottom: 11 }, metricLabel: { color: '#B8A89D', fontSize: 8, letterSpacing: 1, fontWeight: '800' }, metricValue: { color: theme.colors.white, fontSize: 19, fontWeight: '900', marginTop: 4 }, progressTrack: { height: 8, borderRadius: 8, backgroundColor: '#49372B', overflow: 'hidden', marginTop: 3 }, progressFill: { height: 8, borderRadius: 8, backgroundColor: theme.colors.orange }, progressLabel: { color: '#D9C6B8', fontSize: 10, marginTop: 7, marginBottom: 9 }, weighRow: { flexDirection: 'row', gap: 9, marginTop: 12, alignItems: 'center' }, weighInput: { flex: 1, color: theme.colors.white, backgroundColor: '#241B16', borderColor: '#594435', marginBottom: 0 }, weighButton: { minHeight: 47, borderRadius: 13, backgroundColor: theme.colors.orange, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' }, weighButtonText: { color: theme.colors.dark, fontSize: 10, fontWeight: '900' }, historyRow: { minHeight: 35, borderTopWidth: 1, borderTopColor: '#49372B', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 7 }, historyDate: { color: '#B8A89D', fontSize: 10 }, historyValue: { color: theme.colors.white, fontWeight: '800', fontSize: 11 }, email: { color: theme.colors.muted, textAlign: 'center', fontSize: 11, marginTop: 7 }, signOut: { marginTop: 12, marginBottom: 25 } });

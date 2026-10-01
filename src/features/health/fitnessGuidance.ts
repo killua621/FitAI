@@ -51,6 +51,20 @@ export function calculateAdultBmi(profile: FitnessProfile): BmiScreening | null 
   return { value, label: 'IMC em faixa que merece avaliação individual', note: 'IMC não diagnostica gordura corporal nem saúde. Use-o como triagem e procure orientação individual para metas de peso.', belowAdultRange: false };
 }
 
+/** Optional first milestone for motivation, not a clinical target or rate of change. */
+export function suggestWeightMilestone(profile: FitnessProfile): number | null {
+  const { age, height_cm: heightCm, weight_kg: weightKg, goal } = profile;
+  if (!age || age < 18 || !weightKg || weightKg < 20 || !heightCm || heightCm < 80) return null;
+  if (goal === 'Ganhar massa muscular') return Math.round((weightKg + 2) * 10) / 10;
+  if (goal === 'Perder gordura') {
+    const bmi = weightKg / ((heightCm / 100) ** 2);
+    if (bmi < 18.5) return null;
+    const step = Math.min(5, Math.max(2, Math.round(weightKg * 0.05)));
+    return Math.round((weightKg - step) * 10) / 10;
+  }
+  return null;
+}
+
 export type NutritionGuidance = {
   title: string;
   intro: string;
@@ -62,7 +76,7 @@ export type NutritionGuidance = {
 export function getNutritionGuidance(profile: FitnessProfile): NutritionGuidance {
   const bmi = calculateAdultBmi(profile);
   const ageNote = profile.age && profile.age < 18
-    ? 'As faixas de IMC e metas de energia para adultos não se aplicam a menores de 18 anos. O FitAI não calcula dieta para perda ou ganho de peso nesse caso; procure orientação de profissional com um responsável.'
+    ? 'As faixas de IMC e metas de energia para adultos não se aplicam a menores de 18 anos. O ScholzFit não calcula dieta para perda ou ganho de peso nesse caso; procure orientação de profissional com um responsável.'
     : !profile.age || !profile.height_cm || !profile.weight_kg
       ? 'Preencha idade, altura e peso no perfil para ver a faixa de IMC adulto. Sem esses dados, não dá para personalizar uma estimativa.'
       : undefined;
@@ -99,7 +113,7 @@ export function getNutritionGuidance(profile: FitnessProfile): NutritionGuidance
     case 'Perder gordura':
       return {
         title: 'Estratégia gradual para reduzir gordura',
-        intro: 'Priorize hábitos que você consiga sustentar. O FitAI não fixa calorias com base apenas em altura e peso.',
+        intro: 'Priorize hábitos que você consiga sustentar. O ScholzFit não fixa calorias com base apenas em altura e peso.',
         tips: ['Faça a base das refeições com alimentos in natura ou minimamente processados, incluindo feijão, verduras, frutas e uma fonte de proteína.', 'Mantenha treino de força para preservar capacidade e massa muscular; cardio pode ser somado gradualmente.', 'Acompanhe a tendência do peso por semanas, junto de medidas, energia e desempenho — não só uma pesagem isolada.'],
         ageNote,
         bmi,
@@ -116,7 +130,7 @@ export function getNutritionGuidance(profile: FitnessProfile): NutritionGuidance
       return {
         title: 'Alimentação para seu ritmo',
         intro: 'Uma base simples ajuda a sustentar seus treinos e sua rotina.',
-        tips: ['Varie alimentos in natura ou minimamente processados, com frutas, verduras, leguminosas, cereais e fontes de proteína.', 'Ajuste horários e porções à sua fome, rotina e resposta ao treino; o FitAI não substitui avaliação nutricional.'],
+        tips: ['Varie alimentos in natura ou minimamente processados, com frutas, verduras, leguminosas, cereais e fontes de proteína.', 'Ajuste horários e porções à sua fome, rotina e resposta ao treino; o ScholzFit não substitui avaliação nutricional.'],
         ageNote,
         bmi,
       };

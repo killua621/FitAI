@@ -5,7 +5,7 @@ export function Brand() {
   return (
     <View style={styles.brand}>
       <View style={styles.mark}><Text style={styles.spark}>✳</Text></View>
-      <Text style={styles.name}>fit<Text style={styles.accent}>ai</Text></Text>
+      <Text style={styles.name}>Scholz<Text style={styles.accent}>Fit</Text></Text>
     </View>
   );
 }

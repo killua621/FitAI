@@ -1,19 +1,47 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import type { EmailOtpType } from '@supabase/supabase-js';
 import { Brand } from '@/components/Brand';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { supabase } from '@/lib/supabase';
 import { theme } from '@/theme';
+import { useAuth } from '@/features/auth/AuthProvider';
 
 export default function AuthScreen() {
+  const { session, profile, loading } = useAuth();
+  const { code: rawCode, token_hash: rawTokenHash, type: rawType } = useLocalSearchParams<{ code?: string | string[]; token_hash?: string | string[]; type?: string | string[] }>();
+  const callbackProcessed = useRef(false);
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const isSignup = mode === 'signup';
+
+  useEffect(() => {
+    if (!loading && session) router.replace(profile ? '/home' : '/onboarding');
+  }, [loading, session, profile]);
+
+  useEffect(() => {
+    const code = Array.isArray(rawCode) ? rawCode[0] : rawCode;
+    const tokenHash = Array.isArray(rawTokenHash) ? rawTokenHash[0] : rawTokenHash;
+    const type = Array.isArray(rawType) ? rawType[0] : rawType;
+    if (callbackProcessed.current || (!code && !tokenHash)) return;
+    callbackProcessed.current = true;
+    void (async () => {
+      setBusy(true);
+      try {
+        const result = code
+          ? await supabase.auth.exchangeCodeForSession(code)
+          : await supabase.auth.verifyOtp({ token_hash: tokenHash!, type: (type || 'signup') as EmailOtpType });
+        if (result.error) throw result.error;
+      } catch (error) {
+        Alert.alert('Não foi possível confirmar o e-mail', error instanceof Error ? error.message : 'Peça um novo link e tente novamente.');
+      } finally { setBusy(false); }
+    })();
+  }, [rawCode, rawTokenHash, rawType]);
 
   const submit = async () => {
     const normalizedEmail = email.trim().toLowerCase();
@@ -28,7 +56,7 @@ export default function AuthScreen() {
     setBusy(true);
     try {
       if (isSignup) {
-        const { data, error } = await supabase.auth.signUp({ email: normalizedEmail, password });
+        const { data, error } = await supabase.auth.signUp({ email: normalizedEmail, password, options: { emailRedirectTo: 'https://fitai-4unn.onrender.com/auth' } });
         if (error) throw error;
         if (!data.session) {
           Alert.alert('Confirme seu e-mail', 'Enviamos um link de confirmação. Depois, volte e entre na sua conta.');

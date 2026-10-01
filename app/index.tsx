@@ -9,7 +9,7 @@ import { theme } from '@/theme';
 function HeroArtwork() {
   return (
     <View style={styles.artwork}>
-      <View style={styles.artTop}><Text style={styles.artKicker}>FITAI / SEU PRÓXIMO NÍVEL</Text><Text style={styles.artIndex}>01 — 03</Text></View>
+      <View style={styles.artTop}><Text style={styles.artKicker}>SCHOLZFIT / SEU PRÓXIMO NÍVEL</Text><Text style={styles.artIndex}>01 — 03</Text></View>
       <View style={styles.orbitOuter}><View style={styles.orbitInner}><View style={styles.sun}><Text style={styles.sunMark}>✳</Text></View></View></View>
       <View style={styles.verticalLine} />
       <View style={styles.artBottom}><View><Text style={styles.artLabel}>CONSISTÊNCIA</Text><Text style={styles.artMessage}>É assim que{ '\n' }a mudança começa.</Text></View><View style={styles.orangeBadge}><Text style={styles.badgeMark}>↗</Text></View></View>
@@ -35,7 +35,7 @@ export default function WelcomeScreen() {
         </View>
         <View style={[styles.artWrap, wide && styles.artWrapWide]}><HeroArtwork /></View>
       </View>
-      <View style={styles.footer}><Text style={styles.footerBrand}>FITAI</Text><Text style={styles.footerCopy}>FORÇA, FOCO E EQUILÍBRIO.</Text></View>
+      <View style={styles.footer}><Text style={styles.footerBrand}>SCHOLZFIT</Text><Text style={styles.footerCopy}>FORÇA, FOCO E EQUILÍBRIO.</Text></View>
     </Screen>
   );
 }

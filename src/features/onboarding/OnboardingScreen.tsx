@@ -7,6 +7,7 @@ import { Screen } from '@/components/Screen';
 import { theme } from '@/theme';
 import { experienceOptions, goalOptions, onboardingHeadings, trainingDays } from '@/features/onboarding/data';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { suggestWeightMilestone } from '@/features/health/fitnessGuidance';
 
 
 function StepHeader({ step, onBack }: { step: number; onBack: () => void }) {
@@ -45,6 +46,7 @@ export default function OnboardingScreen() {
     }
     try {
       const weightKg = weight ? Number(weight.replace(',', '.')) : null;
+      const weightGoal = profile?.weight_goal_kg ?? suggestWeightMilestone({ goal, age: age ? Number(age) : null, height_cm: height ? Number(height) : null, weight_kg: weightKg });
       await saveProfile({
         display_name: name.trim() || session?.user.email?.split('@')[0] || 'Atleta',
         goal,
@@ -53,6 +55,8 @@ export default function OnboardingScreen() {
         age: age ? Number(age) : null,
         height_cm: height ? Number(height) : null,
         weight_kg: weightKg,
+        weight_goal_kg: weightGoal,
+        weight_goal_start_kg: profile?.weight_goal_start_kg ?? (weightGoal ? weightKg : null),
         water_goal_ml: profile?.water_goal_ml ?? null,
         training_weekdays: selectedWeekdays,
         activity_level: activity,

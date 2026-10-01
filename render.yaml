@@ -4,6 +4,10 @@ services:
     runtime: static
     buildCommand: npm ci && npm run web:build
     staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /auth
+        destination: /auth.html
     envVars:
       - key: EXPO_PUBLIC_SUPABASE_URL
         sync: false

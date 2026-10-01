@@ -5,7 +5,7 @@ import { theme } from '@/theme';
 export function PageIntro({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
   return (
     <>
-      <View style={styles.top}><Brand /><Text style={styles.topNote}>FITAI · SEU ESPAÇO</Text></View>
+      <View style={styles.top}><Brand /><Text style={styles.topNote}>SCHOLZFIT · SEU ESPAÇO</Text></View>
       <View style={styles.intro}><Text style={styles.eyebrow}>{eyebrow}</Text><Text style={styles.title}>{title}</Text><Text style={styles.description}>{description}</Text></View>
     </>
   );

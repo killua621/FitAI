@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "FitAI",
-    "slug": "fitai",
-    "scheme": "fitai",
+    "name": "ScholzFit",
+    "slug": "scholzfit",
+    "scheme": "scholzfit",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",

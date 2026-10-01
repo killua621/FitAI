@@ -1,4 +1,4 @@
-# FitAI
+# ScholzFit
 
 MVP em Expo, React Native, TypeScript e Expo Router, conectado ao Supabase. Inclui boas-vindas, criação de conta/login, onboarding em quatro etapas e cinco abas: Início, Treino, Dieta, Evolução e Perfil. O perfil e os registros de hidratação são salvos por conta. Metas, sessões de treino, alimentação e métricas já têm tabelas preparadas com políticas de acesso por usuário.
 
@@ -62,10 +62,10 @@ supabase/migrations/          Estrutura SQL e políticas de segurança (RLS)
 render.yaml                   Build e publicação no Render
 ```
 
-As abas ficam fixas na parte inferior. Início mostra o resumo semanal real e permite registrar um check-in por dia; Treino gera sessões diferentes conforme objetivo, experiência e frequência; Dieta adapta princípios e exemplos ao objetivo; Evolução ainda usa indicadores demonstrativos. O onboarding salva idade, altura, peso, atividade diária e dias escolhidos. O registro de água aceita valores livres em ml; a meta inicial para adultos com peso informado é uma estimativa editável do FitAI (peso × 30 ml, com limites), não uma recomendação oficial.
+As abas ficam fixas na parte inferior. Início mostra o resumo semanal real e permite registrar um check-in por dia com modalidade e foco; Treino gera sessões diferentes conforme objetivo, experiência e frequência; Dieta adapta princípios e exemplos ao objetivo; Perfil permite editar dados, definir o próximo marco de peso e registrar pesagens semanais. A pesagem atualiza o peso usado pelas outras abas. O registro de água aceita valores livres em ml; a meta de partida para adultos com peso informado é uma estimativa editável (peso × 30 ml, com limites), não uma recomendação oficial.
 
 O tema padrão agora é escuro. A aba Treino gera sessões diferentes conforme objetivo, experiência e frequência semanal; Dieta apresenta IMC apenas como triagem e uma faixa educativa de manutenção para adultos elegíveis com informações completas. O app não converte essa faixa em dieta, déficit ou superávit. Os critérios e fontes estão em `docs/training-nutrition-methodology.md`.
 
 ## Supabase
 
-O esquema inicial está em `supabase/migrations/202609300001_initial_user_data.sql`; a hidratação foi adicionada em `supabase/migrations/202609300002_water_logs.sql`; e a personalização/check-in está em `supabase/migrations/202610010003_personalization_checkins.sql`. A terceira migração foi aplicada ao projeto FitAI. As tabelas de dados pessoais usam RLS e políticas limitadas ao usuário autenticado. A chave `publishable` do app pode ser incluída em `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; nunca coloque uma chave `secret` ou `service_role` no aplicativo.
+O esquema inicial está em `supabase/migrations/202609300001_initial_user_data.sql`; hidratação em `202609300002_water_logs.sql`; personalização e check-in em `202610010003_personalization_checkins.sql`; e marcos de peso/detalhes de treino em `202610010004_weight_tracking_checkin_details.sql` (aplicada ao Supabase). As tabelas pessoais usam RLS por usuário. O cadastro envia confirmação para `https://fitai-4unn.onrender.com/auth`; mantenha essa URL exata em Authentication → URL Configuration → Redirect URLs do Supabase e defina a URL pública do site como Site URL. A chave `publishable` pode ficar no app; nunca exponha a `secret` ou `service_role`.
