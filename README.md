@@ -53,8 +53,8 @@ src/
     auth/                     Sessão, perfil autenticado e formulário de acesso
     onboarding/               Etapas e opções do onboarding
     home/                     Resumo principal
-    training/                 Rotina de treino demonstrativa
-    nutrition/                Sugestões de refeições e hidratação
+    training/                 Gerador de sessões por frequência e objetivo
+    nutrition/                Orientação por objetivo, refeições e hidratação
     progress/                 Indicadores de evolução demonstrativos
     profile/                  Preferências do onboarding
   theme/                      Cores, tipografia, espaçamentos e raios
@@ -62,7 +62,7 @@ supabase/migrations/          Estrutura SQL e políticas de segurança (RLS)
 render.yaml                   Build e publicação no Render
 ```
 
-As abas ficam fixas na parte inferior. Início concentra os destaques e atalhos; Treino, Dieta e Evolução ainda exibem dados demonstrativos. O onboarding salva o perfil em `profiles`; a aba Dieta permite adicionar água em ml e mostra quanto falta para a meta diária de 2 L, com os registros salvos em `water_logs`. A sessão de login é persistida no dispositivo.
+As abas ficam fixas na parte inferior. Início concentra os destaques e atalhos; Treino gera sessões diferentes de acordo com experiência e frequência; Dieta adapta princípios e exemplos ao objetivo; Evolução ainda usa indicadores demonstrativos. O onboarding salva o perfil em `profiles`; a aba Dieta permite adicionar água em ml e mostra quanto falta para a meta diária de 2 L, com os registros salvos em `water_logs`. A sessão de login é persistida no dispositivo.
 
 O tema padrão agora é escuro. A aba Treino gera sessões diferentes conforme objetivo, experiência e frequência semanal; Dieta adapta exemplos de refeições e apresenta o IMC adulto como triagem quando há dados suficientes. Os critérios e fontes estão em `docs/training-nutrition-methodology.md`.
 
