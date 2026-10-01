@@ -15,10 +15,13 @@ export default function ProfileScreen() {
   const profileGoal = profile?.goal || goal || 'Ganhar massa muscular';
   const profileExperience = profile?.experience_level || experience || 'Estou começando';
   const daysPerWeek = String(profile?.training_days || trainingDays || '3');
+  const activityLabels: Record<string, string> = { low: 'Baixa', light: 'Leve', moderate: 'Moderada', high: 'Alta' };
   const preferences = [
     { label: 'Objetivo', value: profileGoal },
     { label: 'Experiência', value: profileExperience },
     { label: 'Frequência', value: daysPerWeek + ' dias por semana' },
+    ...(profile?.activity_level ? [{ label: 'Atividade diária', value: activityLabels[profile.activity_level] || 'Não informada' }] : []),
+    ...(profile?.water_goal_ml ? [{ label: 'Meta de água personalizada', value: profile.water_goal_ml.toLocaleString('pt-BR') + ' ml/dia' }] : []),
   ];
   return (
     <Screen scroll footer={<AppTabBar active="/profile" />} style={styles.screen}>

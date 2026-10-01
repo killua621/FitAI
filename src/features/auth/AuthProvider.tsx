@@ -11,6 +11,10 @@ export type Profile = {
   age: number | null;
   height_cm: number | null;
   weight_kg: number | null;
+  water_goal_ml: number | null;
+  training_weekdays: string[];
+  activity_level: 'low' | 'light' | 'moderate' | 'high' | null;
+  energy_equation_profile: 'female' | 'male' | null;
 };
 
 type AuthContextValue = {
@@ -20,9 +24,13 @@ type AuthContextValue = {
   profileLoading: boolean;
   waterTotalMl: number;
   waterLoading: boolean;
+  workoutCheckinDates: string[];
   refreshProfile: () => Promise<Profile | null>;
   refreshWater: () => Promise<number>;
   addWater: (amountMl: number) => Promise<void>;
+  setWaterGoal: (goalMl: number) => Promise<void>;
+  refreshWorkoutCheckins: () => Promise<string[]>;
+  addWorkoutCheckin: (workoutTitle: string) => Promise<boolean>;
   saveProfile: (profile: Omit<Profile, 'id'>) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -36,6 +44,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [profileLoading, setProfileLoading] = useState(false);
   const [waterTotalMl, setWaterTotalMl] = useState(0);
   const [waterLoading, setWaterLoading] = useState(false);
+  const [workoutCheckinDates, setWorkoutCheckinDates] = useState<string[]>([]);
 
   const refreshProfile = async () => {
     const userId = session?.user.id;
@@ -97,6 +106,45 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setWaterTotalMl((total) => total + amountMl);
   };
 
+  const setWaterGoal = async (goalMl: number) => {
+    const userId = session?.user.id;
+    if (!userId) throw new Error('Entre novamente para salvar sua meta.');
+    if (profile?.age && profile.age < 18) throw new Error('Peça a um responsável para definir uma meta adequada com orientação profissional.');
+    if (!Number.isInteger(goalMl) || goalMl < 500 || goalMl > 6000) throw new Error('Escolha uma meta entre 500 e 6.000 ml.');
+    const { error } = await supabase.from('profiles').update({ water_goal_ml: goalMl }).eq('id', userId);
+    if (error) throw error;
+    setProfile((current) => current ? { ...current, water_goal_ml: goalMl } : current);
+  };
+
+  const loadWorkoutCheckins = async (userId: string) => {
+    const { data, error } = await supabase.from('workout_checkins').select('checkin_date')
+      .eq('user_id', userId).order('checkin_date', { ascending: false }).limit(90);
+    if (error) throw error;
+    return (data || []).map((row) => row.checkin_date as string);
+  };
+
+  const refreshWorkoutCheckins = async () => {
+    const userId = session?.user.id;
+    if (!userId) { setWorkoutCheckinDates([]); return []; }
+    const dates = await loadWorkoutCheckins(userId);
+    setWorkoutCheckinDates(dates);
+    return dates;
+  };
+
+  const addWorkoutCheckin = async (workoutTitle: string) => {
+    const userId = session?.user.id;
+    if (!userId) throw new Error('Entre novamente para registrar seu treino.');
+    const now = new Date();
+    const checkinDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const { data, error } = await supabase.from('workout_checkins').upsert({
+      user_id: userId, checkin_date: checkinDate, workout_title: workoutTitle,
+    }, { onConflict: 'user_id,checkin_date', ignoreDuplicates: true }).select('checkin_date');
+    if (error) throw error;
+    if (!data?.length) return false;
+    setWorkoutCheckinDates((dates) => dates.includes(checkinDate) ? dates : [checkinDate, ...dates]);
+    return true;
+  };
+
   useEffect(() => {
     let active = true;
     const loadSessionData = async (currentSession: Session | null) => {
@@ -105,6 +153,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       if (!currentSession) {
         setProfile(null);
         setWaterTotalMl(0);
+        setWorkoutCheckinDates([]);
         setProfileLoading(false);
         setWaterLoading(false);
         setLoading(false);
@@ -112,13 +161,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
       setProfileLoading(true);
       setWaterLoading(true);
-      const [profileResult, waterResult] = await Promise.all([
+      const [profileResult, waterResult, checkinsResult] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle(),
         loadWaterForUser(currentSession.user.id),
+        loadWorkoutCheckins(currentSession.user.id),
       ]);
       if (!active) return;
       setProfile(profileResult.data as Profile | null);
       setWaterTotalMl(waterResult);
+      setWorkoutCheckinDates(checkinsResult);
       setProfileLoading(false);
       setWaterLoading(false);
       setLoading(false);
@@ -139,13 +190,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const value = useMemo<AuthContextValue>(() => ({
-    session, profile, loading, profileLoading, waterTotalMl, waterLoading,
-    refreshProfile, refreshWater, addWater, saveProfile,
+    session, profile, loading, profileLoading, waterTotalMl, waterLoading, workoutCheckinDates,
+    refreshProfile, refreshWater, addWater, setWaterGoal, refreshWorkoutCheckins, addWorkoutCheckin, saveProfile,
     signOut: async () => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     },
-  }), [session, profile, loading, profileLoading, waterTotalMl, waterLoading]);
+  }), [session, profile, loading, profileLoading, waterTotalMl, waterLoading, workoutCheckinDates]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

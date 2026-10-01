@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { AppTabBar } from '@/components/AppTabBar';
 import { Button } from '@/components/Button';
@@ -7,15 +7,32 @@ import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { buildTrainingProgram } from '@/features/training/programGenerator';
 import { theme } from '@/theme';
+import { getCurrentWeekCheckins, weekdayLabels } from '@/features/training/checkins';
 
 export default function TrainingScreen() {
   const { width } = useWindowDimensions();
-  const { profile } = useAuth();
+  const { profile, workoutCheckinDates, refreshWorkoutCheckins, addWorkoutCheckin } = useAuth();
   const wide = width >= 800;
   const program = buildTrainingProgram(profile || {});
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const todayIndex = (new Date().getDay() + 6) % 7;
+  const trainingWeekdays = profile?.training_weekdays?.length ? profile.training_weekdays : weekdayLabels.slice(0, profile?.training_days || 3);
+  const todaySessionIndex = trainingWeekdays.indexOf(weekdayLabels[todayIndex]);
+  const initialSessionIndex = todaySessionIndex >= 0 ? todaySessionIndex : Math.max(0, trainingWeekdays.indexOf(weekdayLabels[(todayIndex + 1) % 7]));
+  const [selectedIndex, setSelectedIndex] = useState(initialSessionIndex);
+  const [checkingIn, setCheckingIn] = useState(false);
   const selectedSession = program.sessions[selectedIndex] || program.sessions[0];
   const isMinor = Boolean(profile?.age && profile.age < 18);
+  const week = getCurrentWeekCheckins(workoutCheckinDates);
+  const alreadyCheckedIn = week.days.find((day) => day.isToday)?.checkedIn || false;
+  useEffect(() => { void refreshWorkoutCheckins().catch(() => undefined); }, []);
+  const checkIn = async () => {
+    setCheckingIn(true);
+    try {
+      const added = await addWorkoutCheckin(selectedSession.title);
+      Alert.alert(added ? 'Check-in registrado' : 'Check-in já feito', added ? 'Treino de hoje contado no seu progresso.' : 'Você já registrou um treino hoje.');
+    } catch (error) { Alert.alert('Não foi possível registrar', error instanceof Error ? error.message : 'Tente novamente.'); }
+    finally { setCheckingIn(false); }
+  };
 
   return (
     <Screen scroll footer={<AppTabBar active="/workout" />} style={styles.screen}>
@@ -27,6 +44,8 @@ export default function TrainingScreen() {
           <Text style={styles.sessionCopy}>{program.subtitle}</Text>
           <View style={styles.sessionMeta}><Text style={styles.metaText}>◷  {selectedSession.duration} min</Text><Text style={styles.metaText}>↗  {selectedSession.exercises.length} exercícios</Text></View>
           <Button title="Ver orientação do treino" onPress={() => Alert.alert('Como progredir', 'Use uma carga que permita manter a técnica e terminar cada série sentindo que ainda faria 2 ou 3 repetições. Se sentir dor, interrompa o movimento.')} style={styles.startButton} />
+          <Pressable accessibilityRole="button" disabled={checkingIn || alreadyCheckedIn} onPress={checkIn} style={({ pressed }) => [{ alignSelf: 'flex-start', minHeight: 42, borderRadius: 13, backgroundColor: alreadyCheckedIn ? theme.colors.brownLight : theme.colors.orange, paddingHorizontal: 15, marginTop: 10, justifyContent: 'center', opacity: checkingIn ? 0.7 : 1 }, pressed && { opacity: 0.8 }]}><Text style={{ color: theme.colors.dark, fontSize: 10, fontWeight: '900' }}>{checkingIn ? 'Registrando…' : alreadyCheckedIn ? '✓ Treino de hoje contado' : 'Fiz meu treino hoje · check-in'}</Text></Pressable>
+          <Text style={{ color: '#A99486', fontSize: 9, marginTop: 7 }}>{week.count} check-in{week.count === 1 ? '' : 's'} nesta semana</Text>
           <View style={styles.sessionOrb}><Text style={styles.sessionOrbText}>F</Text></View>
         </View>
         <View style={styles.weekCard}>

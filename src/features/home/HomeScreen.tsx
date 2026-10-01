@@ -1,21 +1,23 @@
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useEffect, useState } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Brand } from '@/components/Brand';
 import { AppTabBar } from '@/components/AppTabBar';
-import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { theme } from '@/theme';
 import { homePreview } from '@/features/home/mockData';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { WaterTracker } from '@/features/nutrition/WaterTracker';
 import { buildTrainingProgram } from '@/features/training/programGenerator';
+import { getCurrentWeekCheckins, weekdayLabels } from '@/features/training/checkins';
 
 function SectionHeader({ title, eyebrow }: { title: string; eyebrow: string }) {
   return <View style={styles.sectionHeader}><View><Text style={styles.sectionEyebrow}>{eyebrow}</Text><Text style={styles.sectionTitle}>{title}</Text></View><View style={styles.sectionRule} /></View>;
 }
 
 export default function HomeScreen() {
-  const { profile } = useAuth();
+  const { profile, workoutCheckinDates, refreshWorkoutCheckins, addWorkoutCheckin } = useAuth();
+  const [checkingIn, setCheckingIn] = useState(false);
   const { width } = useWindowDimensions();
   const { name, goal, trainingDays } = useLocalSearchParams<{ name?: string; goal?: string; trainingDays?: string }>();
   const wide = width >= 800;
@@ -23,7 +25,24 @@ export default function HomeScreen() {
   const planGoal = profile?.goal || goal || 'Ganhar massa muscular';
   const daysPerWeek = String(profile?.training_days || trainingDays || '3');
   const trainingProgram = buildTrainingProgram(profile || { goal: planGoal, training_days: Number(daysPerWeek) });
-  const nextSession = trainingProgram.sessions[0];
+  const week = getCurrentWeekCheckins(workoutCheckinDates);
+  const todayIndex = (new Date().getDay() + 6) % 7;
+  const today = week.days[todayIndex];
+  const isTrainingDay = profile?.training_weekdays?.length ? profile.training_weekdays.includes(weekdayLabels[todayIndex]) : todayIndex < Number(daysPerWeek);
+  const schedule = profile?.training_weekdays?.length ? profile.training_weekdays : weekdayLabels.slice(0, Number(daysPerWeek));
+  const todayScheduleIndex = schedule.indexOf(weekdayLabels[todayIndex]);
+  const nextScheduleOffset = Array.from({ length: 7 }, (_, offset) => (todayIndex + offset) % 7).find((index) => schedule.includes(weekdayLabels[index]));
+  const sessionIndex = todayScheduleIndex >= 0 ? todayScheduleIndex : Math.max(0, schedule.indexOf(weekdayLabels[nextScheduleOffset ?? 0]));
+  const nextSession = trainingProgram.sessions[sessionIndex] || trainingProgram.sessions[0];
+  useEffect(() => { void refreshWorkoutCheckins().catch(() => undefined); }, []);
+  const checkIn = async () => {
+    setCheckingIn(true);
+    try {
+      const added = await addWorkoutCheckin(nextSession.title);
+      Alert.alert(added ? 'Check-in registrado' : 'Check-in já feito', added ? 'Seu treino de hoje foi contado na semana.' : 'Seu treino de hoje já está contado.');
+    } catch (error) { Alert.alert('Não foi possível registrar', error instanceof Error ? error.message : 'Tente novamente.'); }
+    finally { setCheckingIn(false); }
+  };
 
   return (
     <Screen scroll footer={<AppTabBar active="/home" />} style={styles.screen}>
@@ -42,9 +61,10 @@ export default function HomeScreen() {
         </View>
         <View style={styles.weekCard}>
           <View style={styles.weekTop}><View><Text style={styles.cardEyebrow}>ESTA SEMANA</Text><Text style={styles.weekTitle}>Seu ritmo</Text></View><View style={styles.weekIcon}><Text style={styles.weekIconText}>↗</Text></View></View>
-          <View style={styles.weekNumbers}><Text style={styles.weekNumber}>{homePreview.weeklyCompletion}<Text style={styles.weekNumberTotal}>/{daysPerWeek}</Text></Text><View><Text style={styles.weekNumberCaption}>treino concluído</Text><Text style={styles.weekNumberCaption}>de {daysPerWeek} dias</Text></View></View>
-          <View style={styles.weekDays}>{['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((day, index) => <View key={index} style={styles.weekDay}><View style={[styles.dayDot, index === 0 && styles.dayDone]}><Text style={[styles.dayMark, index === 0 && styles.dayMarkDone]}>{index === 0 ? '✓' : day}</Text></View><Text style={styles.dayCaption}>{day}</Text></View>)}</View>
-          <Text style={styles.weekFoot}>Cada treino conta. Continue.</Text>
+          <View style={styles.weekNumbers}><Text style={styles.weekNumber}>{week.count}<Text style={styles.weekNumberTotal}>/{daysPerWeek}</Text></Text><View><Text style={styles.weekNumberCaption}>check-ins esta semana</Text><Text style={styles.weekNumberCaption}>meta de {daysPerWeek} dias</Text></View></View>
+          <View style={styles.weekDays}>{week.days.map((day, index) => <View key={day.key} style={styles.weekDay}><View style={[styles.dayDot, day.checkedIn && styles.dayDone, day.isToday && { borderWidth: 1, borderColor: theme.colors.orange }]}><Text style={[styles.dayMark, day.checkedIn && styles.dayMarkDone]}>{day.checkedIn ? '✓' : weekdayLabels[index][0]}</Text></View><Text style={styles.dayCaption}>{weekdayLabels[index]}</Text></View>)}</View>
+          <Text style={styles.weekFoot}>{isTrainingDay ? `Hoje, ${weekdayLabels[todayIndex]}, é seu dia de treino.` : `Hoje, ${weekdayLabels[todayIndex]}, é dia flexível/recuperação.`}</Text>
+          <Pressable accessibilityRole="button" disabled={checkingIn || today.checkedIn} onPress={checkIn} style={({ pressed }) => [{ minHeight: 38, borderRadius: 12, backgroundColor: today.checkedIn ? theme.colors.brownLight : theme.colors.orange, marginTop: 10, alignItems: 'center', justifyContent: 'center', opacity: checkingIn ? 0.7 : 1 }, pressed && { opacity: 0.8 }]}><Text style={{ color: theme.colors.dark, fontSize: 10, fontWeight: '900' }}>{checkingIn ? 'Registrando…' : today.checkedIn ? '✓ Treino de hoje contado' : 'Marcar treino de hoje'}</Text></Pressable>
         </View>
       </View>
 

@@ -3,7 +3,29 @@ export type FitnessProfile = {
   height_cm?: number | null;
   weight_kg?: number | null;
   goal?: string | null;
+  activity_level?: 'low' | 'light' | 'moderate' | 'high' | null;
+  energy_equation_profile?: 'female' | 'male' | null;
 };
+
+export type EnergyEstimate = { restingKcal: number; maintenanceLow: number; maintenanceHigh: number; proteinReferenceG: number };
+
+/** Mifflin-St Jeor + a self-reported activity factor: educational adult estimate only. */
+export function estimateAdultEnergy(profile: FitnessProfile): EnergyEstimate | null {
+  const { age, height_cm: height, weight_kg: weight, energy_equation_profile: equationProfile, activity_level: activity } = profile;
+  if (!age || age < 18 || age > 75 || !height || !weight || !equationProfile || !activity) return null;
+  const bmi = weight / ((height / 100) ** 2);
+  if (bmi < 18.5 || bmi >= 30) return null;
+  const restingKcal = 10 * weight + 6.25 * height - 5 * age + (equationProfile === 'male' ? 5 : -161);
+  const activityFactors = { low: 1.2, light: 1.375, moderate: 1.55, high: 1.725 };
+  const maintenance = restingKcal * activityFactors[activity];
+  const round50 = (value: number) => Math.round(value / 50) * 50;
+  return {
+    restingKcal: round50(restingKcal),
+    maintenanceLow: round50(maintenance * 0.9),
+    maintenanceHigh: round50(maintenance * 1.1),
+    proteinReferenceG: Math.round(weight * 1.6),
+  };
+}
 
 export type BmiScreening = {
   value: number;
@@ -100,4 +122,3 @@ export function getNutritionGuidance(profile: FitnessProfile): NutritionGuidance
       };
   }
 }
-
