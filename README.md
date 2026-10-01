@@ -64,6 +64,8 @@ render.yaml                   Build e publicação no Render
 
 As abas ficam fixas na parte inferior. Início concentra os destaques e atalhos; Treino, Dieta e Evolução ainda exibem dados demonstrativos. O onboarding salva o perfil em `profiles`; a aba Dieta permite adicionar água em ml e mostra quanto falta para a meta diária de 2 L, com os registros salvos em `water_logs`. A sessão de login é persistida no dispositivo.
 
+O tema padrão agora é escuro. A aba Treino gera sessões diferentes conforme objetivo, experiência e frequência semanal; Dieta adapta exemplos de refeições e apresenta o IMC adulto como triagem quando há dados suficientes. Os critérios e fontes estão em `docs/training-nutrition-methodology.md`.
+
 ## Supabase
 
 O esquema inicial está em `supabase/migrations/202609300001_initial_user_data.sql`; a tabela de hidratação foi adicionada em `supabase/migrations/202609300002_water_logs.sql`. Ambos já foram aplicados ao projeto FitAI. Cada tabela tem RLS habilitado e políticas `SELECT`, `INSERT`, `UPDATE` e `DELETE` limitadas ao usuário proprietário. A chave `publishable` do app pode ser incluída em `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; nunca coloque uma chave `secret` ou `service_role` no aplicativo.

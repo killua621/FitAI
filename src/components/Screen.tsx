@@ -13,7 +13,7 @@ export function Screen({ children, scroll = false, style, footer }: Props) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       {scroll ? (
         <ScrollView contentContainerStyle={contentStyle} showsVerticalScrollIndicator={false}>
           {children}
