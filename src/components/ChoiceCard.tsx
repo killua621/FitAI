@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
   copy: { flex: 1, marginLeft: 14 },
   title: { color: theme.colors.ink, fontSize: 15, fontWeight: '700' },
   subtitle: { color: theme.colors.muted, fontSize: 12, marginTop: 5 },
-  radio: { width: 21, height: 21, borderWidth: 1.5, borderColor: '#CBBCAF', borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  radio: { width: 21, height: 21, borderWidth: 1.5, borderColor: '#D0C3DB', borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   radioActive: { borderColor: theme.colors.orangeDeep },
   dot: { width: 11, height: 11, borderRadius: 6, backgroundColor: theme.colors.orangeDeep },
 });

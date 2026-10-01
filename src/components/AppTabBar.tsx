@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   itemPressed: { transform: [{ scale: 0.95 }], opacity: 0.86 },
   iconWrap: { width: 34, height: 30, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   iconActive: { backgroundColor: theme.colors.orange },
-  icon: { color: '#B09B8D', fontSize: 19, fontWeight: '700' },
+  icon: { color: '#B8A7C4', fontSize: 19, fontWeight: '700' },
   iconSelected: { color: theme.colors.dark },
   label: { color: theme.colors.muted, fontSize: 9, fontWeight: '600' },
   labelSelected: { color: theme.colors.ink, fontWeight: '900' },
