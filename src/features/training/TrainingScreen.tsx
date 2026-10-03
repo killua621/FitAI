@@ -9,17 +9,14 @@ import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { buildTrainingProgram } from '@/features/training/programGenerator';
 import { theme } from '@/theme';
-import { getCurrentWeekCheckins, weekdayLabels } from '@/features/training/checkins';
+import { getCurrentWeekCheckins, getNextTrainingSessionIndex } from '@/features/training/checkins';
 
 export default function TrainingScreen() {
   const { width } = useWindowDimensions();
   const { profile, workoutCheckinDates, refreshWorkoutCheckins } = useAuth();
   const wide = width >= 800;
   const program = buildTrainingProgram(profile || {});
-  const todayIndex = (new Date().getDay() + 6) % 7;
-  const trainingWeekdays = profile?.training_weekdays?.length ? profile.training_weekdays : weekdayLabels.slice(0, profile?.training_days || 3);
-  const todaySessionIndex = trainingWeekdays.indexOf(weekdayLabels[todayIndex]);
-  const initialSessionIndex = todaySessionIndex >= 0 ? todaySessionIndex : Math.max(0, trainingWeekdays.indexOf(weekdayLabels[(todayIndex + 1) % 7]));
+  const initialSessionIndex = getNextTrainingSessionIndex(workoutCheckinDates, program.sessions.length);
   const [selectedIndex, setSelectedIndex] = useState(initialSessionIndex);
   const [activeDemoKey, setActiveDemoKey] = useState<string | null>(null);
   const [guidanceOpen, setGuidanceOpen] = useState(false);

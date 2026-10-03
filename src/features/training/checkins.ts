@@ -17,3 +17,11 @@ export function getCurrentWeekCheckins(checkinDates: string[], now = new Date())
   return { days, count: days.filter((day) => day.checkedIn).length };
 }
 
+export function getNextTrainingSessionIndex(checkinDates: string[], sessionCount: number, now = new Date()) {
+  if (sessionCount <= 0) return 0;
+  const todayIndex = (now.getDay() + 6) % 7;
+  const completedBeforeToday = getCurrentWeekCheckins(checkinDates, now).days
+    .slice(0, todayIndex)
+    .filter((day) => day.checkedIn).length;
+  return completedBeforeToday % sessionCount;
+}

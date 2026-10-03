@@ -6,7 +6,7 @@ import { Brand } from '@/components/Brand';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { buildTrainingProgram } from '@/features/training/programGenerator';
-import { getCurrentWeekCheckins, weekdayLabels } from '@/features/training/checkins';
+import { getCurrentWeekCheckins, getNextTrainingSessionIndex, weekdayLabels } from '@/features/training/checkins';
 import { WaterTracker } from '@/features/nutrition/WaterTracker';
 import { theme } from '@/theme';
 
@@ -24,14 +24,7 @@ export default function HomeScreen() {
   const week = getCurrentWeekCheckins(workoutCheckinDates);
   const todayIndex = (new Date().getDay() + 6) % 7;
   const today = week.days[todayIndex];
-  const schedule = profile?.training_weekdays?.length
-    ? weekdayLabels.filter((day) => profile.training_weekdays.includes(day)).slice(0, 6)
-    : weekdayLabels.slice(0, daysPerWeek);
-  const todaySessionIndex = schedule.indexOf(weekdayLabels[todayIndex]);
-  const upcomingIndex = Array.from({ length: 7 }, (_, offset) => (todayIndex + offset) % 7)
-    .map((weekday) => schedule.indexOf(weekdayLabels[weekday]))
-    .find((index) => index >= 0) ?? 0;
-  const sessionIndex = todaySessionIndex >= 0 ? todaySessionIndex : upcomingIndex;
+  const sessionIndex = getNextTrainingSessionIndex(workoutCheckinDates, program.sessions.length);
   const todaySession = program.sessions[sessionIndex] || program.sessions[0];
 
   useEffect(() => { void refreshWorkoutCheckins().catch(() => undefined); }, []);
