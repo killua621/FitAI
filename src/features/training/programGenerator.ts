@@ -11,7 +11,7 @@ export type Exercise = { name: string; focus: string; sets: number; reps: string
 export type TrainingSession = { id: string; title: string; focus: string; exercises: Exercise[]; duration: number };
 export type TrainingProgram = { title: string; subtitle: string; sessions: TrainingSession[]; method: string; cardio: string };
 
-type ExerciseSeed = { name: string; focus: string; reps?: string; rest?: string };
+type ExerciseSeed = { name: string; focus: string; reps?: string; rest?: string; priority?: boolean };
 type SessionSeed = { title: string; focus: string; exercises: ExerciseSeed[] };
 
 const squat = (name = 'Agachamento goblet ou leg press'): ExerciseSeed => ({ name, focus: 'Quadríceps e glúteos' });
@@ -60,27 +60,45 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
   const days = Math.max(2, Math.min(6, profile.training_days || 3));
   const goal = profile.goal || 'Ganhar massa muscular';
   const beginner = profile.experience_level === 'Estou começando';
-  const sets = beginner ? 2 : 3;
   const reps = goal === 'Melhorar condicionamento' ? '10–15' : '8–12';
   const requestedEmphasis = profile.training_emphasis || 'automatic';
-  const emphasis = requestedEmphasis === 'automatic'
-    ? profile.energy_equation_profile === 'female' ? 'lower_body' : profile.energy_equation_profile === 'male' ? 'upper_body' : 'balanced'
-    : requestedEmphasis;
-  const lowerFocus = /quadríceps|glúteos|coxa|panturrilha|posterior/i;
-  const upperFocus = /peito|tríceps|costas|bíceps|ombros|ombro/i;
+  // Automatic starts balanced: sex does not dictate which muscles someone wants to prioritize.
+  const emphasis = requestedEmphasis === 'automatic' ? 'balanced' : requestedEmphasis;
+  const lowerAccessories: ExerciseSeed[] = [
+    { name: 'Cadeira extensora', focus: 'Quadríceps', priority: true },
+    { name: 'Mesa flexora', focus: 'Posterior de coxa', priority: true },
+    { name: 'Cadeira abdutora', focus: 'Glúteos e abdutores', priority: true },
+    { name: 'Panturrilha em pé', focus: 'Panturrilhas', priority: true },
+    { name: 'Coice na polia', focus: 'Glúteos', priority: true },
+    { name: 'Passada apoiada', focus: 'Quadríceps e glúteos', priority: true },
+  ];
+  const upperAccessories: ExerciseSeed[] = [
+    { name: 'Elevação lateral', focus: 'Ombros', priority: true },
+    { name: 'Tríceps na polia', focus: 'Tríceps', priority: true },
+    { name: 'Rosca alternada', focus: 'Bíceps', priority: true },
+    { name: 'Face pull', focus: 'Costas e ombros', priority: true },
+    { name: 'Crucifixo na máquina', focus: 'Peito', priority: true },
+    { name: 'Rosca martelo', focus: 'Bíceps e antebraço', priority: true },
+  ];
   const templates = templatesByDays[days];
-  const sessions = templates.map((session, index) => ({
+  const sessions = templates.map((session, index) => {
+    const exercises = [...session.exercises];
+    if (emphasis === 'lower_body') exercises.push(lowerAccessories[index % lowerAccessories.length]);
+    if (emphasis === 'upper_body') exercises.push(upperAccessories[index % upperAccessories.length]);
+    const emphasisLabel = emphasis === 'lower_body' ? ' · prioridade em inferiores' : emphasis === 'upper_body' ? ' · prioridade em superiores' : '';
+    return {
     id: `workout-${index + 1}`,
     title: session.title,
-    focus: session.focus,
-    duration: session.exercises.length >= 5 ? 45 : 40,
-    exercises: session.exercises.map((exercise) => ({
+    focus: `${session.focus}${emphasisLabel}`,
+    duration: exercises.length >= 6 ? 55 : exercises.length >= 5 ? 45 : 40,
+    exercises: exercises.map((exercise) => ({
       ...exercise,
-      sets: Math.min(4, sets + (emphasis === 'lower_body' && lowerFocus.test(exercise.focus) ? 1 : 0) + (emphasis === 'upper_body' && upperFocus.test(exercise.focus) ? 1 : 0)),
+      sets: exercise.priority ? (beginner ? 3 : 4) : 3,
       reps: exercise.reps || reps,
       rest: exercise.rest || '90–120 s',
     })),
-  }));
+  };
+  });
 
   const title = emphasis === 'lower_body'
     ? 'Força · foco em pernas e glúteos'
@@ -107,7 +125,7 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
     title,
     subtitle,
     sessions,
-    method: `${sets} séries por exercício · ${reps} repetições · termine cada série sentindo que ainda conseguiria fazer 2 ou 3 repetições com boa técnica. Quando alcançar o topo da faixa com controle em todas as séries, aumente a carga um pouco. Descanse 90–120 s nos movimentos principais.`,
+    method: `Comece com 3 séries por exercício; nos acessórios da ênfase escolhida, use 4 séries se já treina com experiência. Faça ${reps} repetições com controle e pare ainda conseguindo cerca de 2 repetições bem feitas. Quando atingir o topo da faixa com técnica estável, aumente a carga gradualmente. Descanse 90–120 s nos movimentos principais.`,
     cardio: profile.age && profile.age < 18
       ? 'Menores de 18 anos precisam de atividades e progressão adequadas à idade, com supervisão. Este plano foi pensado como referência para adultos.'
       : 'Para adultos, a OMS recomenda acumular 150–300 min de atividade moderada (ou 75–150 min vigorosa) por semana e fortalecer os principais grupos musculares em 2 ou mais dias. Comece de onde está; ganhar massa não exige zerar o cardio.',

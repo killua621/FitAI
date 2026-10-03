@@ -55,12 +55,20 @@ export function calculateAdultBmi(profile: FitnessProfile): BmiScreening | null 
 export function suggestWeightMilestone(profile: FitnessProfile): number | null {
   const { age, height_cm: heightCm, weight_kg: weightKg, goal } = profile;
   if (!age || age < 18 || !weightKg || weightKg < 20 || !heightCm || heightCm < 80) return null;
-  if (goal === 'Ganhar massa muscular') return Math.round((weightKg + 2) * 10) / 10;
+  if (goal === 'Ganhar massa muscular') {
+    const step = Math.min(4, Math.max(2, Math.round(weightKg * 0.06)));
+    return Math.round((weightKg + step) * 10) / 10;
+  }
   if (goal === 'Perder gordura') {
     const bmi = weightKg / ((heightCm / 100) ** 2);
     if (bmi < 18.5) return null;
-    const step = Math.min(5, Math.max(2, Math.round(weightKg * 0.05)));
+    const step = Math.min(5, Math.max(2, Math.ceil(weightKg * 0.05)));
     return Math.round((weightKg - step) * 10) / 10;
+  }
+  if (goal === 'Recomposição corporal') {
+    const bmi = weightKg / ((heightCm / 100) ** 2);
+    if (bmi >= 25) return Math.round((weightKg - Math.min(5, Math.max(2, Math.ceil(weightKg * 0.05)))) * 10) / 10;
+    if (bmi < 18.5) return Math.round((weightKg + Math.min(3, Math.max(1, Math.round(weightKg * 0.03)))) * 10) / 10;
   }
   return null;
 }
@@ -96,6 +104,16 @@ export function getNutritionGuidance(profile: FitnessProfile): NutritionGuidance
       title: 'Priorize segurança e saúde',
       intro: 'Seu IMC estimado está abaixo da faixa de referência adulta. Não vou montar uma estratégia para perder peso com esses dados.',
       tips: ['Converse com médico ou nutricionista antes de tentar mudar o peso.', 'Mantenha refeições regulares e treino de força adequado ao seu nível, sem metas agressivas.'],
+      ageNote,
+      bmi,
+    };
+  }
+
+  if (profile.goal === 'Recomposição corporal' && bmi?.belowAdultRange) {
+    return {
+      title: 'Acompanhe com orientação individual',
+      intro: 'O IMC é só uma triagem e não mede músculo ou gordura. Com um valor abaixo da faixa adulta, evite perseguir metas automáticas sem conversar com um profissional de saúde.',
+      tips: ['Mantenha refeições regulares e treino adequado ao seu nível.', 'Acompanhe força, energia e medidas junto de um profissional; peso sozinho não define composição corporal.'],
       ageNote,
       bmi,
     };
