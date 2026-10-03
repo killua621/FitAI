@@ -1,73 +1,68 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { router } from 'expo-router';
+import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppTabBar } from '@/components/AppTabBar';
 import { PageIntro } from '@/components/PageIntro';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { estimateAdultEnergy, getNutritionGuidance } from '@/features/health/fitnessGuidance';
 import { WaterTracker } from '@/features/nutrition/WaterTracker';
+import { MealIdea, mealIdeas, nutritionSources } from '@/features/nutrition/nutritionContent';
 import { theme } from '@/theme';
 
-const mealsByGoal: Record<string, { time: string; name: string; detail: string }[]> = {
-  'Ganhar massa muscular': [
-    { time: 'CAFÉ DA MANHÃ', name: 'Aveia, banana e iogurte', detail: 'Some leite ou ovos se fizer sentido para sua rotina.' },
-    { time: 'ALMOÇO', name: 'Arroz, feijão e proteína', detail: 'Frango, peixe, ovos ou tofu com legumes e um fio de azeite.' },
-    { time: 'LANCHE', name: 'Pão com ovos e fruta', detail: 'Uma opção prática para acrescentar energia e proteína.' },
-    { time: 'JANTAR', name: 'Batata, feijão e carne ou tofu', detail: 'Complete com verduras ou legumes que você gosta.' },
-  ],
-  'Perder gordura': [
-    { time: 'CAFÉ DA MANHÃ', name: 'Iogurte natural, aveia e fruta', detail: 'Uma combinação simples com fruta e fonte de proteína.' },
-    { time: 'ALMOÇO', name: 'Arroz, feijão e prato colorido', detail: 'Inclua verduras e uma fonte de proteína; ajuste porções sem cortar grupos inteiros.' },
-    { time: 'LANCHE', name: 'Fruta e uma fonte de proteína', detail: 'Iogurte, leite ou ovos são opções conforme suas preferências.' },
-    { time: 'JANTAR', name: 'Omelete ou tofu com legumes', detail: 'Se tiver fome, inclua arroz, mandioca, batata ou pão.' },
-  ],
-  'Recomposição corporal': [
-    { time: 'CAFÉ DA MANHÃ', name: 'Ovos, pão e fruta', detail: 'Troque os alimentos conforme gosto e disponibilidade.' },
-    { time: 'ALMOÇO', name: 'Arroz, feijão, proteína e legumes', detail: 'Uma refeição brasileira variada, sem necessidade de excluir carboidratos.' },
-    { time: 'LANCHE', name: 'Iogurte natural com fruta', detail: 'Acrescente aveia ou castanhas se isso combinar com sua rotina.' },
-    { time: 'JANTAR', name: 'Peixe, ovos ou leguminosas', detail: 'Sirva com cereais ou tubérculos e vegetais.' },
-  ],
+const categories = Object.keys(mealIdeas);
+const focusByGoal: Record<string, { title: string; body: string; ideas: string[] }> = {
+  'Ganhar massa muscular': { title: 'Apoie seus treinos com refeições consistentes', body: 'Para ganhar massa, a alimentação precisa acompanhar o treino e a recuperação. Use refeições variadas e inclua uma fonte de proteína ao longo do dia; as quantidades individuais devem ser definidas com nutricionista.', ideas: ['Arroz, feijão e frango ou tofu', 'Batata, ovos e legumes', 'Fruta com iogurte ou grão-de-bico'] },
+  'Perder gordura': { title: 'Busque mudanças graduais e sustentáveis', body: 'Priorize refeições que saciam, com verduras, legumes, frutas, feijões e uma fonte de proteína. Não é necessário excluir grupos inteiros de alimentos.', ideas: ['Feijão e vegetais no almoço', 'Fruta como lanche', 'Mantenha alimentos de que gosta em porções adequadas'] },
+  'Recomposição corporal': { title: 'Equilibre variedade, treino e rotina', body: 'Uma rotina sustentável combina alimentos variados com treino de força e recuperação. O progresso não depende de um único alimento ou de cortar carboidratos.', ideas: ['Combine arroz e feijão com vegetais', 'Alterne ovos, peixe, frango e leguminosas', 'Acompanhe também força e medidas'] },
+  'Melhorar condicionamento': { title: 'Tenha energia para a sua rotina', body: 'Cereais, tubérculos, frutas e leguminosas ajudam a compor refeições com energia. Combine com vegetais e uma fonte de proteína conforme sua preferência.', ideas: ['Arroz, feijão e legumes', 'Banana ou outra fruta', 'Mandioca, batata ou milho'] },
 };
-
-const defaultMeals = [
-  { time: 'CAFÉ DA MANHÃ', name: 'Aveia com banana', detail: 'Aveia, iogurte e fruta da estação' },
-  { time: 'ALMOÇO', name: 'Prato equilibrado', detail: 'Arroz, feijão, proteína e vegetais' },
-  { time: 'LANCHE', name: 'Fruta e iogurte', detail: 'Uma opção simples para o meio do dia' },
-  { time: 'JANTAR', name: 'Refeição variada', detail: 'Proteína, legumes e um acompanhamento' },
-];
 
 export default function NutritionScreen() {
   const { profile } = useAuth();
-  const guidance = getNutritionGuidance(profile || {});
-  const energyEstimate = estimateAdultEnergy(profile || {});
-  const hasAdultBodyData = Boolean(profile?.age && profile.age >= 18 && profile.age <= 75 && profile.height_cm && profile.weight_kg);
-  const bmi = hasAdultBodyData ? Number(profile!.weight_kg) / ((Number(profile!.height_cm) / 100) ** 2) : null;
-  const eligibleForEquation = bmi !== null && bmi >= 18.5 && bmi < 30;
-  const meals = mealsByGoal[profile?.goal || ''] || defaultMeals;
+  const [category, setCategory] = useState('Almoço');
+  const goal = profile?.goal || 'Ganhar massa muscular';
+  const focus = focusByGoal[goal] || focusByGoal['Ganhar massa muscular'];
+  const selectedAllergies = profile?.food_allergies || [];
+  const extraRestriction = profile?.food_allergy_notes?.trim() || '';
+  const ideas: MealIdea[] = mealIdeas[category] || [];
+  const compatibleIdeas = ideas.filter((meal) => !meal.avoids.some((item) => selectedAllergies.includes(item)));
+
+  const openSource = async (url: string) => {
+    try { await Linking.openURL(url); }
+    catch { Alert.alert('Não foi possível abrir a fonte', 'Confira sua conexão e tente novamente.'); }
+  };
 
   return (
     <Screen scroll footer={<AppTabBar active="/nutrition" />} style={styles.screen}>
-      <PageIntro eyebrow="ALIMENTAÇÃO COM CONTEXTO" title="Sua alimentação" description="Ideias e princípios que acompanham seu objetivo, sem transformar estimativas em diagnóstico ou dieta clínica." />
-      <View style={styles.waterSection}><View style={styles.sectionTitleRow}><View><Text style={styles.sectionEyebrow}>HÁBITO DO DIA</Text><Text style={styles.sectionTitle}>Sua hidratação</Text></View></View><WaterTracker /></View>
+      <PageIntro eyebrow="COMER BEM, DO SEU JEITO" title="Alimentação" description="Ideias simples de refeições para sua meta, preferências e rotina. Sem dieta rígida ou promessa milagrosa." />
 
-      <View style={styles.guidanceCard}>
-        <Text style={styles.sectionEyebrow}>SEU OBJETIVO</Text>
-        <Text style={styles.guidanceTitle}>{guidance.title}</Text>
-        <Text style={styles.guidanceIntro}>{guidance.intro}</Text>
-        {guidance.bmi && <View style={styles.bmiPanel}><View><Text style={styles.bmiEyebrow}>IMC ADULTO ESTIMADO · TRIAGEM</Text><Text style={styles.bmiValue}>{guidance.bmi.value.toFixed(1).replace('.', ',')}</Text><Text style={styles.bmiLabel}>{guidance.bmi.label}</Text></View><Text style={styles.bmiMark}>↗</Text></View>}
-        {guidance.ageNote && <Text style={styles.guidanceNotice}>{guidance.ageNote}</Text>}
-        {guidance.bmi && <Text style={styles.bmiNote}>{guidance.bmi.note} O IMC não identifica “metabolismo acelerado”.</Text>}
-        {energyEstimate && <View style={styles.energyPanel}><Text style={styles.bmiEyebrow}>REFERÊNCIA ENERGÉTICA · ESTIMATIVA</Text><Text style={styles.energyValue}>{energyEstimate.maintenanceLow.toLocaleString('pt-BR')}–{energyEstimate.maintenanceHigh.toLocaleString('pt-BR')} kcal/dia</Text><Text style={styles.energyNote}>Faixa aproximada de manutenção calculada com idade, altura, peso, parâmetro fisiológico e atividade informada. A margem de exibição do ScholzFit não é um intervalo estatístico: a equação pode errar mais para uma pessoa. Não use como prescrição; acompanhe tendências com nutricionista.</Text><Text style={styles.proteinNote}>Em adultos saudáveis que treinam força, pesquisas encontraram cerca de {energyEstimate.proteinReferenceG} g/dia como referência de proteína (1,6 g/kg). Não é meta clínica nem requisito universal.</Text></View>}
-        {!energyEstimate && hasAdultBodyData && eligibleForEquation && <Text style={styles.guidanceNotice}>Para mostrar uma faixa energética estimada, complete atividade diária e parâmetro da equação no onboarding. Se preferir não informar, as orientações por objetivo continuam disponíveis.</Text>}
-        {!energyEstimate && hasAdultBodyData && !eligibleForEquation && <Text style={styles.guidanceNotice}>Com esses dados, uma fórmula automática pode não ser adequada. O ScholzFit mantém as sugestões gerais e recomenda avaliação individual para metas energéticas.</Text>}
-        <View style={styles.tips}>{guidance.tips.map((tip, index) => <View key={tip} style={styles.tipRow}><Text style={styles.tipNumber}>0{index + 1}</Text><Text style={styles.tipText}>{tip}</Text></View>)}</View>
+      <View style={styles.goalCard}>
+        <Text style={styles.eyebrow}>SUA META · {goal.toUpperCase()}</Text>
+        <Text style={styles.goalTitle}>{focus.title}</Text>
+        <Text style={styles.copy}>{focus.body}</Text>
+        <View style={styles.focusList}>{focus.ideas.map((item, index) => <View key={item} style={styles.focusItem}><Text style={styles.focusNumber}>0{index + 1}</Text><Text style={styles.focusText}>{item}</Text></View>)}</View>
       </View>
 
-      <View style={styles.section}><View><Text style={styles.sectionEyebrow}>IDEIAS FLEXÍVEIS</Text><Text style={styles.sectionTitle}>Refeições para inspirar</Text></View><Text style={styles.sectionNote}>EXEMPLOS</Text></View>
-      <View style={styles.mealList}>{meals.map((meal, index) => <View key={meal.time} style={styles.mealCard}><View style={styles.mealMark}><Text style={styles.mealMarkText}>{String(index + 1).padStart(2, '0')}</Text></View><View style={styles.mealCopy}><Text style={styles.mealTime}>{meal.time}</Text><Text style={styles.mealName}>{meal.name}</Text><Text style={styles.mealDetail}>{meal.detail}</Text></View></View>)}</View>
-      {profile?.age && profile.age >= 18 && profile.weight_kg && <View style={[styles.guidanceCard, { marginTop: 18 }]}><Text style={styles.sectionEyebrow}>PROTEÍNA · REFERÊNCIAS PARA ADULTOS ATIVOS</Text>{profile.height_cm && Number(profile.weight_kg) / ((Number(profile.height_cm) / 100) ** 2) < 30 ? <><Text style={styles.guidanceTitle}>{Math.round(profile.weight_kg * 1.4)}–{Math.round(profile.weight_kg * 2)} g/dia</Text><Text style={styles.guidanceIntro}>Faixa geral estudada para pessoas saudáveis que treinam; não é uma prescrição. Distribua entre refeições e prefira uma variedade de alimentos.</Text></> : <Text style={styles.guidanceIntro}>A quantidade por peso total pode superestimar necessidades em alguns corpos. Mostramos boas fontes; para definir sua meta diária, procure um nutricionista.</Text>}<View style={[styles.tipRow, { borderTopWidth: 1, borderTopColor: theme.colors.line, paddingTop: 11, marginTop: 11 }]}><Text style={styles.tipNumber}>01</Text><Text style={styles.tipText}><Text style={{ fontWeight: '900' }}>100 g já preparados:</Text> peito de frango cozido ≈31,5 g, patinho grelhado ≈35,9 g ou sardinha assada ≈32,2 g de proteína (TACO).</Text></View><View style={[styles.tipRow, { borderTopWidth: 1, borderTopColor: theme.colors.line, paddingTop: 11, marginTop: 11 }]}><Text style={styles.tipNumber}>02</Text><Text style={styles.tipText}>Peixes, ovos, leite, feijão, lentilha e tofu também contam. O teor muda conforme alimento, corte, preparo e porção; confira rótulos/tabelas.</Text></View><Text style={styles.bmiNote}>Referências: ISSN (1,4–2,0 g/kg para adultos ativos) e TACO/NEPA-Unicamp (alimentos preparados). Não substitui um plano de nutricionista.</Text></View>}
-      <View style={styles.note}><Text style={styles.noteIcon}>✳</Text><Text style={styles.noteText}>Sugestões baseadas no Guia Alimentar brasileiro. Preferências, alergias, condições de saúde e necessidades clínicas precisam de avaliação individual.</Text></View>
+      <View style={styles.sectionHeading}><View><Text style={styles.eyebrow}>IDEIAS PARA O DIA</Text><Text style={styles.sectionTitle}>Monte uma refeição</Text></View><Text style={styles.sectionHint}>ESCOLHA UM MOMENTO</Text></View>
+      <View style={styles.categoryRow}>{categories.map((item) => <Pressable key={item} accessibilityRole="tab" accessibilityState={{ selected: category === item }} onPress={() => setCategory(item)} style={[styles.categoryPill, category === item && styles.categoryActive]}><Text style={[styles.categoryText, category === item && styles.categoryTextActive]}>{item}</Text></Pressable>)}</View>
+
+      {extraRestriction ? (
+        <View style={styles.safetyCard}><Text style={styles.safetyTitle}>Vamos cuidar dessa informação</Text><Text style={styles.safetyCopy}>Como você cadastrou outra alergia ou restrição no perfil, as sugestões ficam ocultas. Confira ingredientes e rótulos com atenção e converse com um nutricionista para receber opções seguras para você.</Text><Pressable onPress={() => router.push('/profile')} accessibilityRole="button" style={styles.profileLink}><Text style={styles.profileLinkText}>Rever meu perfil  ↗</Text></Pressable></View>
+      ) : compatibleIdeas.length ? (
+        <View style={styles.mealList}>{compatibleIdeas.map((meal, index) => <View key={meal.id} style={styles.mealCard}><View style={styles.mealTop}><View style={styles.mealNumber}><Text style={styles.mealNumberText}>{String(index + 1).padStart(2, '0')}</Text></View><Text style={styles.mealBadge}>{selectedAllergies.length ? 'FILTRADA PELO SEU PERFIL' : 'IDEIA FLEXÍVEL'}</Text></View><Text style={styles.mealTitle}>{meal.name}</Text><Text style={styles.mealIngredients}>{meal.ingredients}</Text><Text style={styles.mealNote}>{meal.note}</Text></View>)}</View>
+      ) : (
+        <View style={styles.safetyCard}><Text style={styles.safetyTitle}>Sem sugestões para este momento</Text><Text style={styles.safetyCopy}>As opções desta refeição contêm itens marcados no seu perfil. Escolha outro momento ou revise suas restrições com cuidado.</Text></View>
+      )}
+
+      <View style={styles.safetyCard}><Text style={styles.safetyTitle}>{selectedAllergies.length ? 'Atenção às alergias' : 'Precisa ajustar as opções?'}</Text><Text style={styles.safetyCopy}>{selectedAllergies.length ? `Filtramos ingredientes principais com base em: ${selectedAllergies.join(', ')}. Isso não detecta traços, contaminação cruzada, marcas ou todos os ingredientes. Leia sempre o rótulo, inclusive “pode conter”.` : 'Cadastre alergias e restrições no Perfil para filtrar estas ideias. Intolerância à lactose não é o mesmo que alergia ao leite.'}</Text><Pressable onPress={() => router.push('/profile')} accessibilityRole="button" style={styles.profileLink}><Text style={styles.profileLinkText}>Ajustar alergias no perfil  ↗</Text></Pressable></View>
+
+      <View style={styles.sourcesCard}><Text style={styles.eyebrow}>BASEADO EM ORIENTAÇÕES PÚBLICAS</Text><Text style={styles.sourcesTitle}>Como escolhemos as ideias</Text><Text style={styles.sourcesCopy}>Priorizamos variedade e alimentos in natura ou minimamente processados, como recomenda o Guia Alimentar brasileiro. As sugestões são educativas e não substituem um plano individual.</Text>{nutritionSources.map((source) => <Pressable key={source.url} accessibilityRole="link" onPress={() => void openSource(source.url)} style={styles.sourceLink}><Text style={styles.sourceText}>{source.label}  ↗</Text></Pressable>)}</View>
+
+      <View style={styles.waterSection}><View style={styles.sectionHeading}><View><Text style={styles.eyebrow}>HÁBITO DO DIA</Text><Text style={styles.sectionTitle}>Hidratação</Text></View></View><WaterTracker /></View>
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({ screen: { paddingTop: 7 }, waterSection: { marginBottom: 27 }, sectionTitleRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 13 }, section: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 26, marginBottom: 13 }, sectionEyebrow: { color: theme.colors.orangeDeep, fontSize: 9, letterSpacing: 1.3, fontWeight: '900', marginBottom: 5 }, sectionTitle: { color: theme.colors.ink, fontSize: 21, fontWeight: '900' }, sectionNote: { color: theme.colors.muted, fontSize: 8, letterSpacing: 1, fontWeight: '800', marginBottom: 3 }, guidanceCard: { borderRadius: 23, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 20, marginBottom: 5 }, guidanceTitle: { color: theme.colors.ink, fontSize: 20, lineHeight: 26, fontWeight: '900', marginTop: 2 }, guidanceIntro: { color: theme.colors.muted, fontSize: 12, lineHeight: 19, marginTop: 8 }, bmiPanel: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: theme.colors.darkSoft, borderRadius: 16, padding: 15, marginTop: 15 }, bmiEyebrow: { color: theme.colors.orangeDeep, fontSize: 8, letterSpacing: 1, fontWeight: '900' }, bmiValue: { color: theme.colors.ink, fontSize: 25, fontWeight: '900', marginTop: 4 }, bmiLabel: { color: theme.colors.muted, fontSize: 10, marginTop: 2 }, bmiMark: { color: theme.colors.orange, fontSize: 24 }, bmiNote: { color: theme.colors.muted, fontSize: 10, lineHeight: 16, marginTop: 9 }, energyPanel: { borderRadius: 16, backgroundColor: theme.colors.darkSoft, padding: 15, marginTop: 15 }, energyValue: { color: theme.colors.ink, fontSize: 21, fontWeight: '900', marginTop: 6 }, energyNote: { color: theme.colors.muted, fontSize: 10, lineHeight: 16, marginTop: 7 }, proteinNote: { color: theme.colors.muted, fontSize: 10, lineHeight: 16, marginTop: 9, borderTopWidth: 1, borderTopColor: theme.colors.line, paddingTop: 9 }, guidanceNotice: { color: theme.colors.orangeDeep, backgroundColor: theme.colors.orangeSoft, padding: 12, borderRadius: 13, fontSize: 11, lineHeight: 17, marginTop: 13 }, tips: { gap: 13, marginTop: 16 }, tipRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 }, tipNumber: { color: theme.colors.orangeDeep, fontSize: 9, fontWeight: '900', marginTop: 2 }, tipText: { flex: 1, color: theme.colors.ink, fontSize: 11, lineHeight: 17 }, mealList: { gap: 10 }, mealCard: { minHeight: 88, borderRadius: 18, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, flexDirection: 'row', alignItems: 'center', padding: 14, gap: 13 }, mealMark: { width: 43, height: 43, borderRadius: 14, backgroundColor: theme.colors.orangeSoft, alignItems: 'center', justifyContent: 'center' }, mealMarkText: { color: theme.colors.orangeDeep, fontSize: 10, fontWeight: '900' }, mealCopy: { flex: 1 }, mealTime: { color: theme.colors.orangeDeep, fontSize: 8, letterSpacing: 1.2, fontWeight: '900' }, mealName: { color: theme.colors.ink, fontSize: 14, fontWeight: '800', marginTop: 4 }, mealDetail: { color: theme.colors.muted, fontSize: 10, lineHeight: 15, marginTop: 3 }, note: { flexDirection: 'row', alignItems: 'center', gap: 11, padding: 15, borderRadius: 17, backgroundColor: theme.colors.darkSoft, marginTop: 17, marginBottom: 15 }, noteIcon: { color: theme.colors.orangeDeep, fontSize: 20 }, noteText: { flex: 1, color: theme.colors.muted, fontSize: 10, lineHeight: 16, fontWeight: '600' } });
+const styles = StyleSheet.create({
+  screen: { paddingTop: 7 }, goalCard: { borderRadius: 23, backgroundColor: theme.colors.dark, padding: 20, marginBottom: 26 }, eyebrow: { color: theme.colors.orange, fontSize: 9, letterSpacing: 1.3, fontWeight: '900' }, goalTitle: { color: theme.colors.white, fontSize: 20, lineHeight: 26, fontWeight: '900', marginTop: 8 }, copy: { color: '#C5B9CB', fontSize: 12, lineHeight: 19, marginTop: 7 }, focusList: { gap: 9, marginTop: 15 }, focusItem: { flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: 1, borderTopColor: '#392D43', paddingTop: 10 }, focusNumber: { color: theme.colors.orange, fontSize: 9, fontWeight: '900' }, focusText: { flex: 1, color: theme.colors.white, fontSize: 11, fontWeight: '700' }, sectionHeading: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, marginBottom: 13 }, sectionTitle: { color: theme.colors.ink, fontSize: 21, fontWeight: '900', marginTop: 5 }, sectionHint: { color: theme.colors.muted, fontSize: 8, letterSpacing: 1, fontWeight: '800', marginBottom: 3 }, categoryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 12 }, categoryPill: { minHeight: 37, borderRadius: 12, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line }, categoryActive: { backgroundColor: theme.colors.orange, borderColor: theme.colors.orange }, categoryText: { color: theme.colors.muted, fontSize: 10, fontWeight: '800' }, categoryTextActive: { color: theme.colors.dark }, mealList: { gap: 9 }, mealCard: { borderRadius: 18, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 15 }, mealTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, mealNumber: { width: 34, height: 34, borderRadius: 11, backgroundColor: theme.colors.orangeSoft, alignItems: 'center', justifyContent: 'center' }, mealNumberText: { color: theme.colors.orange, fontSize: 10, fontWeight: '900' }, mealBadge: { color: theme.colors.purpleMuted, fontSize: 7, letterSpacing: 0.7, fontWeight: '900' }, mealTitle: { color: theme.colors.ink, fontSize: 15, fontWeight: '900', marginTop: 10 }, mealIngredients: { color: theme.colors.ink, fontSize: 11, lineHeight: 17, marginTop: 5 }, mealNote: { color: theme.colors.muted, fontSize: 10, lineHeight: 15, marginTop: 6 }, safetyCard: { borderRadius: 18, backgroundColor: theme.colors.orangeSoft, padding: 16, marginTop: 13 }, safetyTitle: { color: theme.colors.ink, fontSize: 13, fontWeight: '900' }, safetyCopy: { color: theme.colors.ink, fontSize: 10, lineHeight: 16, marginTop: 6 }, profileLink: { alignSelf: 'flex-start', marginTop: 10, paddingVertical: 5 }, profileLinkText: { color: theme.colors.orangeDeep, fontSize: 10, fontWeight: '900' }, sourcesCard: { borderRadius: 20, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 17, marginTop: 22 }, sourcesTitle: { color: theme.colors.ink, fontSize: 15, fontWeight: '900', marginTop: 7 }, sourcesCopy: { color: theme.colors.muted, fontSize: 10, lineHeight: 16, marginTop: 6 }, sourceLink: { borderTopWidth: 1, borderTopColor: theme.colors.line, marginTop: 10, paddingTop: 10 }, sourceText: { color: theme.colors.purpleMuted, fontSize: 10, fontWeight: '800' }, waterSection: { marginTop: 26, marginBottom: 15 },
+});

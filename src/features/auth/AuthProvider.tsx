@@ -15,6 +15,8 @@ export type Profile = {
   weight_goal_start_kg: number | null;
   water_goal_ml: number | null;
   training_weekdays: string[];
+  food_allergies: string[];
+  food_allergy_notes: string;
   activity_level: 'low' | 'light' | 'moderate' | 'high' | null;
   energy_equation_profile: 'female' | 'male' | null;
   training_emphasis: 'automatic' | 'balanced' | 'lower_body' | 'upper_body' | null;
