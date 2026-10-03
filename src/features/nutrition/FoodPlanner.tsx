@@ -139,7 +139,6 @@ export function FoodPlanner() {
       {food ? (
         <View style={styles.selectionCard}>
           <Text style={styles.selectedName}>{food.description}</Text>
-          {profile?.food_allergies?.length || profile?.food_allergy_notes?.trim() ? <Text style={styles.allergyHint}>Atenção: seu perfil registra {profile.food_allergies?.join(', ')}{profile.food_allergy_notes?.trim() ? `${profile.food_allergies?.length ? ' e ' : ''}${profile.food_allergy_notes.trim()}` : ''}. A TACO não identifica alergênicos nem contaminação cruzada; confira o rótulo antes de consumir.</Text> : null}
           <Text style={styles.portionLabel}>Quantidade consumida · gramas</Text>
           <View style={styles.portionRow}><TextInput value={gramsText} onChangeText={setGramsText} keyboardType="decimal-pad" accessibilityLabel="Quantidade do alimento em gramas" style={styles.gramsInput} /><Text style={styles.gramsUnit}>g</Text></View>
           <View style={styles.macros}>
@@ -196,7 +195,6 @@ const styles = StyleSheet.create({
   emptySearch: { color: theme.colors.muted, fontSize: 10, lineHeight: 15, padding: 12 },
   selectionCard: { borderRadius: 16, padding: 14, marginTop: 13, backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.line },
   selectedName: { color: theme.colors.ink, fontSize: 13, fontWeight: '900' },
-  allergyHint: { color: theme.colors.ink, backgroundColor: theme.colors.orangeSoft, borderRadius: 10, fontSize: 9, lineHeight: 14, padding: 9, marginTop: 9 },
   portionLabel: { color: theme.colors.muted, fontSize: 10, fontWeight: '700', marginTop: 13, marginBottom: 6 },
   portionRow: { minHeight: 43, flexDirection: 'row', alignItems: 'center', borderRadius: 11, borderWidth: 1, borderColor: theme.colors.line, paddingHorizontal: 12 },
   gramsInput: { flex: 1, color: theme.colors.ink, fontSize: 13, fontWeight: '800', outlineStyle: 'none' } as never,
