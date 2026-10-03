@@ -8,6 +8,7 @@ import { theme } from '@/theme';
 import { experienceOptions, goalOptions, onboardingHeadings, trainingDays } from '@/features/onboarding/data';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { suggestWeightMilestone } from '@/features/health/fitnessGuidance';
+import { calculateAge, formatBrazilianDate, parseBrazilianDate } from '@/features/profile/dateOfBirth';
 
 
 function StepHeader({ step, onBack }: { step: number; onBack: () => void }) {
@@ -30,7 +31,7 @@ export default function OnboardingScreen() {
   const [goal, setGoal] = useState(profile?.goal || params.goal || 'Ganhar massa muscular');
   const [experience, setExperience] = useState(profile?.experience_level || params.experience || 'Estou começando');
   const [name, setName] = useState(profile?.display_name || params.name || '');
-  const [age, setAge] = useState(profile?.age ? String(profile.age) : '');
+  const [dateOfBirth, setDateOfBirth] = useState(formatBrazilianDate(profile?.date_of_birth));
   const [height, setHeight] = useState(profile?.height_cm ? String(profile.height_cm) : '');
   const [weight, setWeight] = useState(profile?.weight_kg ? String(profile.weight_kg) : '');
   const [energyProfile, setEnergyProfile] = useState(profile?.energy_equation_profile || null);
@@ -55,13 +56,20 @@ export default function OnboardingScreen() {
     }
     try {
       const weightKg = weight ? Number(weight.replace(',', '.')) : null;
-      const weightGoal = profile?.weight_goal_kg ?? suggestWeightMilestone({ goal, age: age ? Number(age) : null, height_cm: height ? Number(height) : null, weight_kg: weightKg });
+      const parsedDateOfBirth = dateOfBirth ? parseBrazilianDate(dateOfBirth) : profile?.date_of_birth ?? null;
+      if ((!parsedDateOfBirth && !profile?.date_of_birth) || (dateOfBirth && !parsedDateOfBirth)) {
+        Alert.alert('Informe sua data de nascimento', 'Use o formato DD/MM/AAAA para que sua idade acompanhe seus aniversários.');
+        return;
+      }
+      const age = calculateAge(parsedDateOfBirth) ?? profile?.age ?? null;
+      const weightGoal = profile?.weight_goal_kg ?? suggestWeightMilestone({ goal, age, height_cm: height ? Number(height) : null, weight_kg: weightKg });
       await saveProfile({
         display_name: name.trim() || session?.user.email?.split('@')[0] || 'Atleta',
         goal,
         experience_level: experience,
         training_days: selectedWeekdays.length,
-        age: age ? Number(age) : null,
+        age,
+        date_of_birth: parsedDateOfBirth,
         height_cm: height ? Number(height) : null,
         weight_kg: weightKg,
         weight_goal_kg: weightGoal,
@@ -94,8 +102,8 @@ export default function OnboardingScreen() {
           <View style={[styles.form, wide && styles.formWide]}>
             <Text style={styles.label}>Como podemos te chamar?</Text>
             <TextInput value={name} onChangeText={setName} placeholder="Seu nome" placeholderTextColor="#A99BB1" autoCapitalize="words" style={styles.input} />
-            <Text style={styles.label}>Qual é a sua idade?</Text>
-            <TextInput value={age} onChangeText={setAge} placeholder="Ex.: 28 anos" placeholderTextColor="#A99BB1" keyboardType="number-pad" style={styles.input} />
+            <Text style={styles.label}>Data de nascimento</Text>
+            <TextInput value={dateOfBirth} onChangeText={setDateOfBirth} placeholder="DD/MM/AAAA" placeholderTextColor="#A99BB1" keyboardType="numeric" style={styles.input} />
             <View style={styles.fieldRow}>
               <View style={styles.field}><Text style={styles.label}>Altura</Text><TextInput value={height} onChangeText={setHeight} placeholder="170 cm" placeholderTextColor="#A99BB1" keyboardType="number-pad" style={styles.input} /></View>
               <View style={styles.field}><Text style={styles.label}>Peso</Text><TextInput value={weight} onChangeText={setWeight} placeholder="70 kg" placeholderTextColor="#A99BB1" keyboardType="decimal-pad" style={styles.input} /></View>

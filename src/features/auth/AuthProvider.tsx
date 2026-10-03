@@ -1,6 +1,7 @@
 import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { calculateAge } from '@/features/profile/dateOfBirth';
 
 export type Profile = {
   id: string;
@@ -9,6 +10,7 @@ export type Profile = {
   experience_level: string;
   training_days: number;
   age: number | null;
+  date_of_birth: string | null;
   height_cm: number | null;
   weight_kg: number | null;
   weight_goal_kg: number | null;
@@ -64,8 +66,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
     try {
       const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
       if (error) throw error;
-      setProfile(data as Profile | null);
-      return data as Profile | null;
+      const normalized = data ? { ...data, age: calculateAge(data.date_of_birth) ?? data.age } as Profile : null;
+      setProfile(normalized);
+      return normalized;
     } finally {
       setProfileLoading(false);
     }
@@ -196,7 +199,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         loadWeightHistory(currentSession.user.id),
       ]);
       if (!active) return;
-      setProfile(profileResult.data as Profile | null);
+      setProfile(profileResult.data ? { ...profileResult.data, age: calculateAge(profileResult.data.date_of_birth) ?? profileResult.data.age } as Profile : null);
       setWaterTotalMl(waterResult);
       setWorkoutCheckinDates(checkinsResult);
       setWeightHistory(weightsResult);
