@@ -7,21 +7,59 @@ export type TrainingProfile = {
   energy_equation_profile?: 'female' | 'male' | null;
 };
 
-export type Exercise = { name: string; focus: string; sets: number; reps: string; rest: string };
+export type Exercise = { name: string; focus: string; sets: number; reps: string; rest: string; demoVideoId: string };
 export type TrainingSession = { id: string; title: string; focus: string; exercises: Exercise[]; duration: number };
 export type TrainingProgram = { title: string; subtitle: string; sessions: TrainingSession[]; method: string; cardio: string };
 
 type ExerciseSeed = { name: string; focus: string; reps?: string; rest?: string; priority?: boolean };
 type SessionSeed = { title: string; focus: string; exercises: ExerciseSeed[] };
+type DemoEntry = { id: string; aliases: string[] };
+const demoEntries: DemoEntry[] = [
+  { id: 'OwWCkwdATnE', aliases: ['Agachamento com halteres', 'Agachamento goblet'] },
+  { id: 'F8m05d2upOA', aliases: ['Leg press', 'Leg press horizontal'] },
+  { id: 'UORBklZn76k', aliases: ['Afundo apoiado', 'Passada apoiada', 'Afundo', 'Avanço'] },
+  { id: 'bW9nLPZebdI', aliases: ['Agachamento búlgaro'] },
+  { id: 'I1C3BxSQRb0', aliases: ['Levantamento romeno com halteres', 'Levantamento romeno leve', 'Levantamento romeno'] },
+  { id: 'ZPsUi8zwCQ8', aliases: ['Levantamento terra romeno com barra'] },
+  { id: 'cOvGedlKlD4', aliases: ['Elevação pélvica', 'Hip thrust', 'Elevação pélvica na máquina'] },
+  { id: 'uhGWSh09z9Q', aliases: ['Ponte de glúteos'] },
+  { id: 'PzIfB9MiiX8', aliases: ['Cadeira extensora'] },
+  { id: 'IXg1PQ_5gmw', aliases: ['Mesa flexora'] },
+  { id: 'nabhYLtz8Gg', aliases: ['Cadeira abdutora'] },
+  { id: '5Jq-RlfsoCw', aliases: ['Panturrilha em pé', 'Panturrilha no degrau'] },
+  { id: 'xiC7SP9ZimY', aliases: ['Coice na polia'] },
+  { id: 'UHa9U-O09_U', aliases: ['Supino reto com barra'] },
+  { id: 'hlV6f0kHmeo', aliases: ['Supino reto com halteres'] },
+  { id: 'ZaNyRjpoki8', aliases: ['Supino inclinado com halteres'] },
+  { id: 'RILogqbMVzQ', aliases: ['Supino máquina', 'Supino na máquina', 'Supino reto na máquina'] },
+  { id: 'hV21YJFt6MI', aliases: ['Crucifixo inclinado com halteres'] },
+  { id: 'MENdoLpyj7c', aliases: ['Crucifixo na máquina'] },
+  { id: '5I7ogOjvdnc', aliases: ['Desenvolvimento sentado', 'Desenvolvimento com halteres'] },
+  { id: 'uh0oZorifmM', aliases: ['Desenvolvimento na máquina'] },
+  { id: 'ot9nwSC1JnA', aliases: ['Elevação lateral'] },
+  { id: 'wUT3hmnzq3c', aliases: ['Crucifixo inverso na máquina'] },
+  { id: 'GDhW19yQrJI', aliases: ['Puxada na frente', 'Puxada neutra', 'Puxada com pegada neutra'] },
+  { id: 'r4EmE8I74BQ', aliases: ['Remada baixa na polia', 'Remada baixa', 'Remada sentada'] },
+  { id: '2tO6szRdfKQ', aliases: ['Pullover na polia', 'Pullover na máquina'] },
+  { id: 'r4EmE8I74BQ', aliases: ['Remada baixa com pegada fechada'] },
+  { id: 'MfsDC0ymFm8', aliases: ['Rosca com halteres', 'Rosca alternada'] },
+  { id: '0rRpv6o140o', aliases: ['Rosca martelo'] },
+  { id: 'M88Bt4MMpkI', aliases: ['Tríceps na polia'] },
+  { id: 'uxPlAbWFUDs', aliases: ['Prancha'] },
+  { id: 'x2gzR9zzSCw', aliases: ['Prancha lateral'] },
+  { id: 'uAe1Uj3Y05k', aliases: ['Abdominal na máquina'] },
+  { id: 'DYNewranZWc', aliases: ['Twist russo pernas levantadas', 'Abdominal russo'] },
+];
+const demoVideoFor = (name: string) => demoEntries.find((entry) => entry.aliases.includes(name))?.id || '';
 
-const squat = (name = 'Agachamento goblet ou leg press'): ExerciseSeed => ({ name, focus: 'Quadríceps e glúteos' });
+const squat = (name = 'Agachamento com halteres'): ExerciseSeed => ({ name, focus: 'Quadríceps e glúteos' });
 const hinge = (name = 'Levantamento romeno com halteres'): ExerciseSeed => ({ name, focus: 'Posterior de coxa e glúteos' });
-const push = (name = 'Supino com halteres ou máquina'): ExerciseSeed => ({ name, focus: 'Peito e tríceps' });
-const pull = (name = 'Remada sentada ou com halteres'): ExerciseSeed => ({ name, focus: 'Costas e bíceps' });
+const push = (name = 'Supino reto com halteres'): ExerciseSeed => ({ name, focus: 'Peito e tríceps' });
+const pull = (name = 'Remada baixa na polia'): ExerciseSeed => ({ name, focus: 'Costas e bíceps' });
 const verticalPush = (name = 'Desenvolvimento sentado'): ExerciseSeed => ({ name, focus: 'Ombros e tríceps' });
 const verticalPull = (name = 'Puxada na frente'): ExerciseSeed => ({ name, focus: 'Costas e bíceps' });
 const hip = (name = 'Elevação pélvica'): ExerciseSeed => ({ name, focus: 'Glúteos' });
-const core = (name = 'Prancha ou dead bug'): ExerciseSeed => ({ name, focus: 'Estabilidade do tronco', reps: '20–40 s', rest: '45–60 s' });
+const core = (name = 'Prancha'): ExerciseSeed => ({ name, focus: 'Estabilidade do tronco', reps: '20–40 s', rest: '45–60 s' });
 
 const templatesByDays: Record<number, SessionSeed[]> = {
   2: [
@@ -30,28 +68,28 @@ const templatesByDays: Record<number, SessionSeed[]> = {
   ],
   3: [
     { title: 'Treino A · Corpo todo', focus: 'Agachar e empurrar', exercises: [squat(), push(), pull(), hinge(), core()] },
-    { title: 'Treino B · Corpo todo', focus: 'Unilateral e puxadas', exercises: [squat('Afundo apoiado'), verticalPush(), verticalPull(), hip(), core('Dead bug')] },
-    { title: 'Treino C · Corpo todo', focus: 'Variação e estabilidade', exercises: [squat('Leg press ou sentar e levantar'), push('Supino inclinado com halteres'), pull('Remada unilateral'), hinge('Mesa flexora ou ponte de glúteos'), core('Prancha lateral')] },
+    { title: 'Treino B · Corpo todo', focus: 'Unilateral e puxadas', exercises: [squat('Afundo apoiado'), verticalPush(), verticalPull(), hip(), core('Prancha lateral')] },
+    { title: 'Treino C · Corpo todo', focus: 'Variação e estabilidade', exercises: [squat('Leg press horizontal'), push('Supino inclinado com halteres'), pull('Remada baixa na polia'), hinge('Mesa flexora'), core('Prancha lateral')] },
   ],
   4: [
     { title: 'Treino A · Superior', focus: 'Empurrar e puxar', exercises: [push(), pull(), verticalPush(), verticalPull(), core()] },
     { title: 'Treino B · Inferior', focus: 'Agachar e dobrar o quadril', exercises: [squat(), hinge(), hip(), { name: 'Mesa flexora', focus: 'Posterior de coxa' }, core()] },
-    { title: 'Treino C · Superior', focus: 'Ângulos diferentes', exercises: [push('Supino inclinado com halteres'), pull('Remada unilateral'), verticalPush('Elevação lateral'), verticalPull('Puxada com pegada neutra'), core('Dead bug')] },
+    { title: 'Treino C · Superior', focus: 'Ângulos diferentes', exercises: [push('Supino inclinado com halteres'), pull('Remada baixa na polia'), verticalPush('Elevação lateral'), verticalPull('Puxada com pegada neutra'), core('Prancha lateral')] },
     { title: 'Treino D · Inferior', focus: 'Unilateral e glúteos', exercises: [squat('Afundo apoiado'), hinge('Levantamento romeno leve'), hip('Ponte de glúteos'), { name: 'Cadeira extensora', focus: 'Quadríceps' }, core('Prancha lateral')] },
   ],
   5: [
     { title: 'Treino A · Superior', focus: 'Peito e costas', exercises: [push(), pull(), verticalPush(), verticalPull(), core()] },
     { title: 'Treino B · Inferior', focus: 'Base de pernas', exercises: [squat(), hinge(), hip(), { name: 'Mesa flexora', focus: 'Posterior de coxa' }, core()] },
-    { title: 'Treino C · Empurrar', focus: 'Peito, ombros e tríceps', exercises: [push('Supino inclinado com halteres'), verticalPush(), { name: 'Flexão inclinada', focus: 'Peito e tríceps' }, { name: 'Elevação lateral', focus: 'Ombros' }, core()] },
-    { title: 'Treino D · Puxar', focus: 'Costas e bíceps', exercises: [verticalPull(), pull('Remada baixa'), { name: 'Face pull ou crucifixo inverso', focus: 'Parte posterior dos ombros' }, { name: 'Rosca com halteres', focus: 'Bíceps' }, core('Dead bug')] },
+    { title: 'Treino C · Empurrar', focus: 'Peito, ombros e tríceps', exercises: [push('Supino inclinado com halteres'), verticalPush(), { name: 'Supino máquina', focus: 'Peito e tríceps' }, { name: 'Elevação lateral', focus: 'Ombros' }, core()] },
+    { title: 'Treino D · Puxar', focus: 'Costas e bíceps', exercises: [verticalPull(), pull('Remada baixa'), { name: 'Crucifixo inverso na máquina', focus: 'Parte posterior dos ombros' }, { name: 'Rosca com halteres', focus: 'Bíceps' }, core('Prancha lateral')] },
     { title: 'Treino E · Inferior', focus: 'Variação de pernas', exercises: [squat('Leg press'), hinge('Levantamento romeno'), hip('Elevação pélvica'), { name: 'Afundo apoiado', focus: 'Quadríceps e glúteos' }, core('Prancha lateral')] },
   ],
   6: [
-    { title: 'Treino A · Empurrar', focus: 'Peito e ombros', exercises: [push(), verticalPush(), { name: 'Flexão inclinada', focus: 'Peito e tríceps' }, { name: 'Elevação lateral', focus: 'Ombros' }, core()] },
-    { title: 'Treino B · Puxar', focus: 'Costas', exercises: [verticalPull(), pull(), { name: 'Face pull ou crucifixo inverso', focus: 'Parte posterior dos ombros' }, { name: 'Rosca com halteres', focus: 'Bíceps' }, core('Dead bug')] },
+    { title: 'Treino A · Empurrar', focus: 'Peito e ombros', exercises: [push(), verticalPush(), { name: 'Supino máquina', focus: 'Peito e tríceps' }, { name: 'Elevação lateral', focus: 'Ombros' }, core()] },
+    { title: 'Treino B · Puxar', focus: 'Costas', exercises: [verticalPull(), pull(), { name: 'Crucifixo inverso na máquina', focus: 'Parte posterior dos ombros' }, { name: 'Rosca com halteres', focus: 'Bíceps' }, core('Prancha lateral')] },
     { title: 'Treino C · Pernas', focus: 'Agachar e dobrar o quadril', exercises: [squat(), hinge(), hip(), { name: 'Mesa flexora', focus: 'Posterior de coxa' }, core()] },
     { title: 'Treino D · Empurrar', focus: 'Ângulos diferentes', exercises: [push('Supino inclinado com halteres'), verticalPush('Desenvolvimento com halteres'), { name: 'Crucifixo na máquina', focus: 'Peito' }, { name: 'Tríceps na polia', focus: 'Tríceps' }, core('Prancha lateral')] },
-    { title: 'Treino E · Puxar', focus: 'Remadas e braços', exercises: [verticalPull('Puxada neutra'), pull('Remada unilateral'), { name: 'Pullover na polia', focus: 'Costas' }, { name: 'Rosca martelo', focus: 'Bíceps e antebraço' }, core('Dead bug')] },
+    { title: 'Treino E · Puxar', focus: 'Remadas e braços', exercises: [verticalPull('Puxada neutra'), pull('Remada baixa na polia'), { name: 'Pullover na polia', focus: 'Costas' }, { name: 'Rosca martelo', focus: 'Bíceps e antebraço' }, core('Prancha lateral')] },
     { title: 'Treino F · Pernas', focus: 'Unilateral e estabilidade', exercises: [squat('Afundo apoiado'), hinge('Levantamento romeno leve'), hip('Ponte de glúteos'), { name: 'Cadeira extensora', focus: 'Quadríceps' }, core('Prancha lateral')] },
   ],
 };
@@ -76,7 +114,7 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
     { name: 'Elevação lateral', focus: 'Ombros', priority: true },
     { name: 'Tríceps na polia', focus: 'Tríceps', priority: true },
     { name: 'Rosca alternada', focus: 'Bíceps', priority: true },
-    { name: 'Face pull', focus: 'Costas e ombros', priority: true },
+    { name: 'Crucifixo inverso na máquina', focus: 'Costas e ombros', priority: true },
     { name: 'Crucifixo na máquina', focus: 'Peito', priority: true },
     { name: 'Rosca martelo', focus: 'Bíceps e antebraço', priority: true },
   ];
@@ -96,6 +134,7 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
       sets: exercise.priority ? (beginner ? 3 : 4) : 3,
       reps: exercise.reps || reps,
       rest: exercise.rest || '90–120 s',
+      demoVideoId: demoVideoFor(exercise.name),
     })),
   };
   });
@@ -131,3 +170,7 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
       : 'Para adultos, a OMS recomenda acumular 150–300 min de atividade moderada (ou 75–150 min vigorosa) por semana e fortalecer os principais grupos musculares em 2 ou mais dias. Comece de onde está; ganhar massa não exige zerar o cardio.',
   };
 }
+
+
+
+
