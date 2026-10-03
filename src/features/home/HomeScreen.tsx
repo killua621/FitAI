@@ -6,7 +6,7 @@ import { Brand } from '@/components/Brand';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { buildTrainingProgram } from '@/features/training/programGenerator';
-import { getCurrentWeekCheckins, getNextTrainingSessionIndex, weekdayLabels } from '@/features/training/checkins';
+import { getCurrentWeekCheckins, getNextTrainingSessionIndex, weekdayLabels, weekdayShortLabels } from '@/features/training/checkins';
 import { WaterTracker } from '@/features/nutrition/WaterTracker';
 import { theme } from '@/theme';
 
@@ -18,7 +18,7 @@ export default function HomeScreen() {
   const [workoutFocus, setWorkoutFocus] = useState('');
   const { width } = useWindowDimensions();
   const wide = width >= 800;
-  const firstName = (profile?.display_name || 'Atleta').split(' ')[0];
+  const firstName = (profile?.display_name || 'Atleta').trim().split(/\s+/)[0];
   const daysPerWeek = Math.max(2, Math.min(6, profile?.training_days || 3));
   const program = buildTrainingProgram(profile || { training_days: daysPerWeek });
   const week = getCurrentWeekCheckins(workoutCheckinDates);
@@ -44,14 +44,14 @@ export default function HomeScreen() {
   return (
     <Screen scroll footer={<AppTabBar active="/home" />} style={styles.screen}>
       <View style={styles.nav}><Brand /><Text style={styles.navLabel}>SEU ESPAÇO DE EVOLUÇÃO</Text><Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" onPress={() => router.push('/profile')} style={styles.avatar}><Text style={styles.avatarText}>{firstName.charAt(0).toUpperCase()}</Text></Pressable></View>
-      <View style={styles.intro}><Text style={styles.eyebrow}>SEU DIA, NO SEU RITMO</Text><Text style={styles.heading}>Olá, {firstName}.</Text><Text style={styles.subheading}>Um passo de cada vez. O que vamos fazer hoje?</Text></View>
+      <View style={styles.intro}><Text style={styles.eyebrow}>SEU DIA, NO SEU RITMO</Text><Text style={styles.heading}>Olá, {firstName}!</Text><Text style={styles.subheading}>Um passo de cada vez. O que vamos fazer hoje?</Text></View>
 
       <View style={styles.checkinCard}>
         <View style={styles.cardTop}><View><Text style={styles.cardEyebrow}>CHECK-IN DE HOJE · {weekdayLabels[todayIndex].toUpperCase()}</Text><Text style={styles.cardTitle}>{today.checkedIn ? 'Você já marcou presença!' : 'Foi treinar hoje?'}</Text></View><View style={styles.checkIcon}><Text style={styles.checkIconText}>{today.checkedIn ? '✓' : '↗'}</Text></View></View>
         <Text style={styles.cardCopy}>{today.checkedIn ? 'Seu esforço já está registrado no seu progresso.' : 'Registre musculação, cardio, uma aula ou outra atividade.'}</Text>
         <Pressable accessibilityRole="button" disabled={checkingIn || today.checkedIn} onPress={() => { setWorkoutFocus(''); setActivityType('Musculação'); setCheckinOpen(true); }} style={[styles.checkinButton, today.checkedIn && styles.checkinButtonDone, checkingIn && { opacity: 0.7 }]}><Text style={styles.checkinButtonText}>{checkingIn ? 'Salvando…' : today.checkedIn ? '✓  Check-in concluído' : 'Fazer check-in'}</Text></Pressable>
         <View style={styles.weekSummary}><Text style={styles.weekSummaryValue}>{week.count}<Text style={styles.weekSummaryTotal}>/{daysPerWeek}</Text></Text><Text style={styles.weekSummaryLabel}>treinos registrados esta semana</Text></View>
-        <View style={styles.weekDays}>{week.days.map((day, index) => <View key={day.key} style={styles.weekDay}><View style={[styles.dayDot, day.checkedIn && styles.dayDone, day.isToday && styles.dayToday]}><Text style={[styles.dayMark, day.checkedIn && styles.dayMarkDone]}>{day.checkedIn ? '✓' : weekdayLabels[index]}</Text></View></View>)}</View>
+        <View style={styles.weekDays}>{week.days.map((day, index) => <View key={day.key} style={styles.weekDay}><View style={[styles.dayDot, day.checkedIn && styles.dayDone, day.isToday && styles.dayToday]}><Text style={[styles.dayMark, day.checkedIn && styles.dayMarkDone]}>{day.checkedIn ? '✓' : weekdayShortLabels[index]}</Text></View></View>)}</View>
       </View>
 
       <View style={styles.hydrationSection}>

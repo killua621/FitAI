@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
+import { HydrationReminder } from '@/features/hydration/HydrationReminder';
 import { theme } from '@/theme';
 
 function RouteGuard({ children }: { children: ReactNode }) {
@@ -31,6 +32,7 @@ export default function RootLayout() {
       <RouteGuard>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background }, animation: 'fade' }} />
       </RouteGuard>
+      <HydrationReminder />
     </AuthProvider>
   );
 }

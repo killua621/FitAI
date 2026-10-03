@@ -8,7 +8,7 @@ import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { suggestWeightMilestone } from '@/features/health/fitnessGuidance';
 import { theme } from '@/theme';
-import { calculateAge, formatBrazilianDate, parseBrazilianDate } from '@/features/profile/dateOfBirth';
+import { calculateAge, formatBrazilianDate, formatBrazilianDateInput, parseBrazilianDate } from '@/features/profile/dateOfBirth';
 
 const goals = ['Ganhar massa muscular', 'Perder gordura', 'Recomposição corporal'];
 
@@ -55,7 +55,7 @@ export default function ProfileScreen() {
         </View>
         {profile?.date_of_birth ? <Text style={styles.helper}>Data de nascimento: {formatBrazilianDate(profile.date_of_birth)} · idade atualizada automaticamente a cada aniversário.</Text> : <>
           <Text style={styles.label}>Data de nascimento</Text>
-          <TextInput value={dateOfBirth} onChangeText={setDateOfBirth} placeholder="DD/MM/AAAA" placeholderTextColor={theme.colors.muted} keyboardType="numeric" style={styles.input} />
+          <TextInput value={dateOfBirth} onChangeText={(value) => setDateOfBirth(formatBrazilianDateInput(value))} placeholder="DD/MM/AAAA" placeholderTextColor={theme.colors.muted} keyboardType="numeric" maxLength={10} style={styles.input} />
           <Text style={styles.helper}>Informe uma vez para sua idade acompanhar seus aniversários.</Text>
         </>}
         <Text style={styles.label}>Objetivo principal</Text><View style={styles.choices}>{goals.map((item) => <Pressable key={item} accessibilityRole="radio" accessibilityState={{ checked: goal === item }} onPress={() => setGoal(item)} style={[styles.choice, goal === item && styles.choiceActive]}><Text style={[styles.choiceText, goal === item && styles.choiceTextActive]}>{item}</Text></Pressable>)}</View>

@@ -8,7 +8,7 @@ import { theme } from '@/theme';
 import { experienceOptions, goalOptions, onboardingHeadings, trainingDays, trainingDayLabels } from '@/features/onboarding/data';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { suggestWeightMilestone } from '@/features/health/fitnessGuidance';
-import { calculateAge, formatBrazilianDate, parseBrazilianDate } from '@/features/profile/dateOfBirth';
+import { calculateAge, formatBrazilianDate, formatBrazilianDateInput, parseBrazilianDate } from '@/features/profile/dateOfBirth';
 
 
 function StepHeader({ step, onBack }: { step: number; onBack: () => void }) {
@@ -104,7 +104,7 @@ export default function OnboardingScreen() {
             <Text style={styles.label}>Como podemos te chamar?</Text>
             <TextInput value={name} onChangeText={setName} placeholder="Seu nome" placeholderTextColor="#A99BB1" autoCapitalize="words" style={styles.input} />
             <Text style={styles.label}>Data de nascimento</Text>
-            <TextInput value={dateOfBirth} onChangeText={setDateOfBirth} placeholder="DD/MM/AAAA" placeholderTextColor="#A99BB1" keyboardType="numeric" style={styles.input} />
+            <TextInput value={dateOfBirth} onChangeText={(value) => setDateOfBirth(formatBrazilianDateInput(value))} placeholder="DD/MM/AAAA" placeholderTextColor="#A99BB1" keyboardType="numeric" maxLength={10} style={styles.input} />
             <View style={styles.fieldRow}>
               <View style={styles.field}><Text style={styles.label}>Altura</Text><TextInput value={height} onChangeText={setHeight} placeholder="170 cm" placeholderTextColor="#A99BB1" keyboardType="number-pad" style={styles.input} /></View>
               <View style={styles.field}><Text style={styles.label}>Peso</Text><TextInput value={weight} onChangeText={setWeight} placeholder="70 kg" placeholderTextColor="#A99BB1" keyboardType="decimal-pad" style={styles.input} /></View>
