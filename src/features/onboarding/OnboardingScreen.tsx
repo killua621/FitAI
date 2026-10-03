@@ -5,7 +5,7 @@ import { Button } from '@/components/Button';
 import { ChoiceCard } from '@/components/ChoiceCard';
 import { Screen } from '@/components/Screen';
 import { theme } from '@/theme';
-import { experienceOptions, goalOptions, onboardingHeadings, trainingDays } from '@/features/onboarding/data';
+import { experienceOptions, goalOptions, onboardingHeadings, trainingDays, trainingDayLabels } from '@/features/onboarding/data';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { suggestWeightMilestone } from '@/features/health/fitnessGuidance';
 import { calculateAge, formatBrazilianDate, parseBrazilianDate } from '@/features/profile/dateOfBirth';
@@ -42,6 +42,7 @@ export default function OnboardingScreen() {
     const preferredCount = Math.max(2, Math.min(6, profile?.training_days || Number(params.trainingDays) || 3));
     return savedDays.length ? savedDays.slice(0, 6) : trainingDays.slice(0, preferredCount);
   });
+  const selectedDayCount = trainingDays.filter((day) => selectedWeekdays.includes(day)).length;
   const resizeWeekdays = (current: string[], target: number) => {
     const ordered = trainingDays.filter((day) => current.includes(day));
     return [...ordered, ...trainingDays.filter((day) => !ordered.includes(day))].slice(0, target);
@@ -67,7 +68,7 @@ export default function OnboardingScreen() {
         display_name: name.trim() || session?.user.email?.split('@')[0] || 'Atleta',
         goal,
         experience_level: experience,
-        training_days: selectedWeekdays.length,
+        training_days: selectedDayCount,
         age,
         date_of_birth: parsedDateOfBirth,
         height_cm: height ? Number(height) : null,
@@ -123,9 +124,12 @@ export default function OnboardingScreen() {
         {step === 3 && (
           <View style={styles.form}>
             <Text style={styles.label}>Quantos dias por semana?</Text>
-            <View style={styles.countRow}>{[2, 3, 4, 5, 6].map((count) => <Pressable key={count} accessibilityRole="button" onPress={() => setSelectedWeekdays((current) => resizeWeekdays(current, count))} style={[styles.countPill, selectedWeekdays.length === count && styles.countActive]}><Text style={[styles.countText, selectedWeekdays.length === count && styles.countTextActive]}>{count}</Text></Pressable>)}</View>
-            <View style={styles.dayTitleRow}><Text style={styles.label}>Escolha seus dias</Text><Text style={styles.dayHint}>{selectedWeekdays.length} {selectedWeekdays.length === 1 ? 'dia selecionado' : 'dias selecionados'}</Text></View>
-            <View style={[styles.dayRow, wide && styles.dayRowWide]}>{trainingDays.map((day) => <Pressable key={day} accessibilityRole="checkbox" accessibilityState={{ checked: selectedWeekdays.includes(day) }} onPress={() => setSelectedWeekdays((current) => { if (current.includes(day)) return current.filter((candidate) => candidate !== day); if (current.length >= 6) { Alert.alert('Rotina equilibrada', 'Selecione até 6 dias de treino por semana para manter espaço para recuperação.'); return current; } return trainingDays.filter((candidate) => current.includes(candidate) || candidate === day); })} style={[styles.dayPill, wide && styles.dayPillWide, selectedWeekdays.includes(day) && styles.dayActive]}><Text style={[styles.dayText, selectedWeekdays.includes(day) && styles.dayTextActive]}>{day}</Text></Pressable>)}</View>
+            <View style={styles.countRow}>{[2, 3, 4, 5, 6].map((count) => <Pressable key={count} accessibilityRole="button" accessibilityState={{ selected: selectedDayCount === count }} onPress={() => setSelectedWeekdays((current) => resizeWeekdays(current, count))} style={[styles.countPill, selectedDayCount === count && styles.countActive]}><Text style={[styles.countText, selectedDayCount === count && styles.countTextActive]}>{count}</Text></Pressable>)}</View>
+            <View style={styles.dayTitleRow}><Text style={styles.label}>Escolha seus dias</Text><Text style={styles.dayHint}>{selectedDayCount} {selectedDayCount === 1 ? 'dia selecionado' : 'dias selecionados'}</Text></View>
+            <View style={[styles.dayRow, wide && styles.dayRowWide]}>{trainingDays.map((day) => {
+              const selected = selectedWeekdays.includes(day);
+              return <Pressable key={day} accessibilityRole="checkbox" accessibilityLabel={trainingDayLabels[day]} accessibilityState={{ checked: selected }} onPress={() => setSelectedWeekdays((current) => { if (current.includes(day)) return current.filter((candidate) => candidate !== day); if (trainingDays.filter((candidate) => current.includes(candidate)).length >= 6) { Alert.alert('Rotina equilibrada', 'Selecione até 6 dias de treino por semana para manter espaço para recuperação.'); return current; } return trainingDays.filter((candidate) => current.includes(candidate) || candidate === day); })} style={[styles.dayPill, wide && styles.dayPillWide, selected && styles.dayActive]}><Text style={[styles.dayText, selected && styles.dayTextActive]}>{trainingDayLabels[day]}</Text></Pressable>;
+            })}</View>
             <Text style={[styles.label, styles.emphasisLabel]}>Como quer distribuir a ênfase?</Text>
             <Text style={styles.helperTop}>A sugestão acompanha o parâmetro fisiológico informado, mas você pode escolher outra distribuição.</Text>
             <View style={styles.emphasisOptions}>{[

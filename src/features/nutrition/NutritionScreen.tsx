@@ -48,9 +48,9 @@ export default function NutritionScreen() {
     catch { Alert.alert('Não foi possível abrir a fonte', 'Confira sua conexão e tente novamente.'); }
   };
 
-  const openDietitianWhatsApp = async () => {
-    try { await Linking.openURL('https://wa.me/5521980147390'); }
-    catch { Alert.alert('Não foi possível abrir o WhatsApp', 'Tente novamente ou salve o número +55 21 98014-7390 nos seus contatos.'); }
+  const openProfessionalWhatsApp = async (number: string, displayNumber: string) => {
+    try { await Linking.openURL(`https://wa.me/${number}`); }
+    catch { Alert.alert('Não foi possível abrir o WhatsApp', `Tente novamente ou salve o número ${displayNumber} nos seus contatos.`); }
   };
 
   return (
@@ -98,7 +98,22 @@ export default function NutritionScreen() {
           <Text style={styles.expertPhone}>+55 21 98014-7390</Text>
           <Text style={styles.expertHint}>Tire suas dúvidas diretamente com a profissional.</Text>
         </View>
-        <Pressable accessibilityRole="link" accessibilityLabel="Conversar com Cinthia Firmino pelo WhatsApp" onPress={() => void openDietitianWhatsApp()} style={styles.whatsappButton}>
+        <Pressable accessibilityRole="link" accessibilityLabel="Conversar com Cinthia Firmino pelo WhatsApp" onPress={() => void openProfessionalWhatsApp('5521980147390', '+55 21 98014-7390')} style={styles.whatsappButton}>
+          <Text style={styles.whatsappSymbol}>☎</Text>
+          <Text style={styles.whatsappLabel}>WhatsApp</Text>
+          <Text style={styles.whatsappArrow}>↗</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.expertCard}>
+        <View style={styles.expertCopy}>
+          <Text style={styles.eyebrow}>TREINO COM ORIENTAÇÃO</Text>
+          <Text style={styles.expertTitle}>Fale com seu personal trainer</Text>
+          <Text style={styles.expertName}>Marcos Paulo · Personal trainer</Text>
+          <Text style={styles.expertPhone}>+55 21 96968-2162</Text>
+          <Text style={styles.expertHint}>Converse sobre seu treino e sua rotina de exercícios.</Text>
+        </View>
+        <Pressable accessibilityRole="link" accessibilityLabel="Conversar com Marcos Paulo pelo WhatsApp" onPress={() => void openProfessionalWhatsApp('5521969682162', '+55 21 96968-2162')} style={styles.whatsappButton}>
           <Text style={styles.whatsappSymbol}>☎</Text>
           <Text style={styles.whatsappLabel}>WhatsApp</Text>
           <Text style={styles.whatsappArrow}>↗</Text>

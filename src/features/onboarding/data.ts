@@ -12,6 +12,9 @@ export const experienceOptions = [
 ] as const;
 
 export const trainingDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'] as const;
+export const trainingDayLabels: Record<(typeof trainingDays)[number], string> = {
+  Seg: 'Segunda', Ter: 'Terça', Qua: 'Quarta', Qui: 'Quinta', Sex: 'Sexta', 'Sáb': 'Sábado', Dom: 'Domingo',
+};
 
 export const onboardingHeadings = [
   ['Qual é o seu objetivo?', 'Vamos começar pelo que mais importa para você.'],
