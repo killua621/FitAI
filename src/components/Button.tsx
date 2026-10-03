@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { theme } from '@/theme';
 
 type Props = {
@@ -26,8 +26,10 @@ export function Button({ title, onPress, variant = 'primary', disabled, style }:
         style,
       ]}
     >
-      <Text style={[styles.label, (dark || outline) && styles.darkLabel]}>{title}</Text>
-      {!outline && <Text style={[styles.arrow, dark && styles.darkArrow]}>↗</Text>}
+      <View style={styles.content}>
+        <Text numberOfLines={1} style={[styles.label, (dark || outline) && styles.darkLabel]}>{title}</Text>
+        {!outline && <Text style={[styles.arrow, dark && styles.darkArrow]}>↗</Text>}
+      </View>
     </Pressable>
   );
 }
@@ -36,9 +38,10 @@ const styles = StyleSheet.create({
   button: { minHeight: 56, borderRadius: 18, backgroundColor: theme.colors.orange, paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', boxShadow: '0px 5px 12px rgba(255,123,63,0.18)' },
   dark: { backgroundColor: theme.colors.dark },
   outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.colors.line },
-  label: { color: theme.colors.dark, fontSize: 14, letterSpacing: 0.1, fontWeight: '900' },
+  content: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, maxWidth: '100%' },
+  label: { color: theme.colors.dark, fontSize: 14, letterSpacing: 0.1, fontWeight: '900', flexShrink: 1, textAlign: 'center' },
   darkLabel: { color: theme.colors.white },
-  arrow: { position: 'absolute', right: 22, color: theme.colors.dark, fontSize: 18, fontWeight: '700' },
+  arrow: { color: theme.colors.dark, fontSize: 18, fontWeight: '700' },
   darkArrow: { color: theme.colors.orange },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.8, transform: [{ scale: 0.99 }] },
