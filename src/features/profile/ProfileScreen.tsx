@@ -44,7 +44,7 @@ export default function ProfileScreen() {
   return (
     <Screen scroll footer={<AppTabBar active="/profile" />} style={styles.screen}>
       <View style={styles.top}><Brand /><Text style={styles.topLabel}>SEU PERFIL</Text></View>
-      <View style={styles.profileIntro}><View style={styles.avatar}><Text style={styles.avatarText}>{(profile?.display_name || 'A')[0].toUpperCase()}</Text></View><Text style={styles.eyebrow}>SEU ESPAÇO, SEU RITMO</Text><Text style={styles.title}>{profile?.display_name || 'Seu perfil'}</Text><Text style={styles.description}>Atualize seus dados. O plano acompanha as mudanças.</Text></View>
+      <View style={styles.profileIntro}><View style={styles.avatar}><Text style={styles.avatarText}>{(profile?.display_name || 'A')[0].toUpperCase()}</Text></View><Text style={styles.eyebrow}>SEU ESPAÇO, SEU RITMO</Text><Text style={styles.title}>{profile?.display_name || 'Seu perfil'}</Text><Text style={styles.description}>Seus dados pessoais ficam aqui para consulta. Objetivo e ênfase de treino podem ser ajustados abaixo.</Text></View>
 
       <View style={styles.card}>
         <Text style={styles.cardEyebrow}>INFORMAÇÕES PESSOAIS</Text>
