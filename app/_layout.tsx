@@ -1,4 +1,4 @@
-import { Href, Stack, router, useSegments } from 'expo-router';
+import { Href, Stack, router, useGlobalSearchParams, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -8,14 +8,16 @@ import { theme } from '@/theme';
 function RouteGuard({ children }: { children: ReactNode }) {
   const { session, profile, loading, profileLoading } = useAuth();
   const segments = useSegments() as string[];
+  const params = useGlobalSearchParams<{ mode?: string | string[] }>();
+  const recoveryMode = params.mode === 'update-password';
   const firstSegment = segments[0];
   const publicRoute = !firstSegment || firstSegment === 'index' || firstSegment === 'auth';
 
   useEffect(() => {
     if (loading || (session && profileLoading)) return;
     if (!session && !publicRoute) router.replace('/auth' as Href);
-    else if (session && publicRoute) router.replace(profile ? '/home' : '/onboarding');
-  }, [session, profile, loading, profileLoading, publicRoute]);
+    else if (session && publicRoute && !recoveryMode) router.replace(profile ? '/home' : '/onboarding');
+  }, [session, profile, loading, profileLoading, publicRoute, recoveryMode]);
 
   if (loading || (session && profileLoading)) {
     return <View style={styles.loading}><ActivityIndicator color={theme.colors.orangeDeep} /></View>;

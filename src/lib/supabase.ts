@@ -23,6 +23,7 @@ const webStorage: SupportedStorage = typeof globalThis.localStorage === 'undefin
 export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
   auth: {
     storage: Platform.OS === 'web' ? webStorage : AsyncStorage,
+    flowType: 'implicit',
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
