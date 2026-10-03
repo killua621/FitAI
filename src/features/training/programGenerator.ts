@@ -52,6 +52,16 @@ const demoEntries: DemoEntry[] = [
 ];
 const demoVideoFor = (name: string) => demoEntries.find((entry) => entry.aliases.includes(name))?.id || '';
 
+function uniqueExercises(exercises: ExerciseSeed[]) {
+  const seen = new Set<string>();
+  return exercises.filter((exercise) => {
+    const key = exercise.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLocaleLowerCase('pt-BR');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 const squat = (name = 'Agachamento com halteres'): ExerciseSeed => ({ name, focus: 'Quadríceps e glúteos' });
 const hinge = (name = 'Levantamento romeno com halteres'): ExerciseSeed => ({ name, focus: 'Posterior de coxa e glúteos' });
 const push = (name = 'Supino reto com halteres'): ExerciseSeed => ({ name, focus: 'Peito e tríceps' });
@@ -123,13 +133,14 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
     const exercises = [...session.exercises];
     if (emphasis === 'lower_body') exercises.push(lowerAccessories[index % lowerAccessories.length]);
     if (emphasis === 'upper_body') exercises.push(upperAccessories[index % upperAccessories.length]);
+    const sessionExercises = uniqueExercises(exercises);
     const emphasisLabel = emphasis === 'lower_body' ? ' · prioridade em inferiores' : emphasis === 'upper_body' ? ' · prioridade em superiores' : '';
     return {
     id: `workout-${index + 1}`,
     title: session.title,
     focus: `${session.focus}${emphasisLabel}`,
-    duration: exercises.length >= 6 ? 55 : exercises.length >= 5 ? 45 : 40,
-    exercises: exercises.map((exercise) => ({
+    duration: sessionExercises.length >= 6 ? 55 : sessionExercises.length >= 5 ? 45 : 40,
+    exercises: sessionExercises.map((exercise) => ({
       ...exercise,
       sets: exercise.priority ? (beginner ? 3 : 4) : 3,
       reps: exercise.reps || reps,
