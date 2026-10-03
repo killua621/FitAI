@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ExerciseDemo } from '@/features/training/ExerciseDemo';
 import { router } from 'expo-router';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { AppTabBar } from '@/components/AppTabBar';
 import { Button } from '@/components/Button';
 import { PageIntro } from '@/components/PageIntro';
@@ -27,6 +27,10 @@ export default function TrainingScreen() {
   const isMinor = Boolean(profile?.age && profile.age < 18);
   const week = getCurrentWeekCheckins(workoutCheckinDates);
   const alreadyCheckedIn = week.days.find((day) => day.isToday)?.checkedIn || false;
+  const contactTrainer = async () => {
+    try { await Linking.openURL('https://wa.me/5521969682162'); }
+    catch { Alert.alert('Não foi possível abrir o WhatsApp', 'Tente novamente ou salve o número +55 21 96968-2162 nos seus contatos.'); }
+  };
   useEffect(() => { void refreshWorkoutCheckins().catch(() => undefined); }, []);
   return (
     <Screen scroll footer={<AppTabBar active="/workout" />} style={styles.screen}>
@@ -65,6 +69,18 @@ export default function TrainingScreen() {
           <View style={styles.guidanceCard}><Text style={styles.sectionEyebrow}>MOVIMENTO AERÓBICO</Text><Text style={styles.guidanceText}>{program.cardio}</Text></View>
         </>
       )}
+      <View style={trainerStyles.card}>
+        <Text style={styles.sectionEyebrow}>ACOMPANHAMENTO PROFISSIONAL</Text>
+        <Text style={trainerStyles.title}>Fale com seu personal trainer</Text>
+        <Text style={trainerStyles.name}>Marcos Paulo · Personal trainer</Text>
+        <Text style={trainerStyles.phone}>+55 21 96968-2162</Text>
+        <Text style={trainerStyles.hint}>Converse sobre seu treino e sua rotina de exercícios.</Text>
+        <Pressable accessibilityRole="link" accessibilityLabel="Conversar com Marcos Paulo pelo WhatsApp" onPress={() => void contactTrainer()} style={trainerStyles.whatsappButton}>
+          <Text style={trainerStyles.whatsappSymbol}>☎</Text>
+          <Text style={trainerStyles.whatsappLabel}>WhatsApp</Text>
+          <Text style={trainerStyles.whatsappArrow}>↗</Text>
+        </Pressable>
+      </View>
       <Text style={styles.footnote}>Plano educativo. Se você tem lesão, dor persistente ou condição de saúde, ajuste o treino com um profissional antes de iniciar.</Text>
       <Modal transparent visible={guidanceOpen} animationType="fade" onRequestClose={() => setGuidanceOpen(false)}>
         <View style={modalStyles.shade}><View style={modalStyles.card}>
@@ -98,6 +114,18 @@ const modalStyles = StyleSheet.create({
   safety: { color: theme.colors.muted, backgroundColor: theme.colors.background, borderRadius: 14, padding: 12, fontSize: 10, lineHeight: 16, marginTop: 14 },
   done: { minHeight: 44, borderRadius: 13, backgroundColor: theme.colors.orange, alignItems: 'center', justifyContent: 'center', marginTop: 10 },
   doneText: { color: theme.colors.dark, fontSize: 11, fontWeight: '900' },
+});
+
+const trainerStyles = StyleSheet.create({
+  card: { borderRadius: 20, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 18, marginTop: 18, marginBottom: 10 },
+  title: { color: theme.colors.ink, fontSize: 17, fontWeight: '900', marginTop: 8 },
+  name: { color: theme.colors.ink, fontSize: 12, fontWeight: '800', marginTop: 7 },
+  phone: { color: theme.colors.muted, fontSize: 11, marginTop: 4 },
+  hint: { color: theme.colors.muted, fontSize: 10, lineHeight: 15, marginTop: 7 },
+  whatsappButton: { minHeight: 46, borderRadius: 14, backgroundColor: '#25D366', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 14, paddingHorizontal: 14 },
+  whatsappSymbol: { color: '#FFFFFF', fontSize: 17, fontWeight: '900' },
+  whatsappLabel: { color: '#092313', fontSize: 12, fontWeight: '900' },
+  whatsappArrow: { color: '#092313', fontSize: 15, fontWeight: '900' },
 });
 
 

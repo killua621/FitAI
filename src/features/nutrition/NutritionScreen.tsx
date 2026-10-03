@@ -105,21 +105,6 @@ export default function NutritionScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.expertCard}>
-        <View style={styles.expertCopy}>
-          <Text style={styles.eyebrow}>TREINO COM ORIENTAÇÃO</Text>
-          <Text style={styles.expertTitle}>Fale com seu personal trainer</Text>
-          <Text style={styles.expertName}>Marcos Paulo · Personal trainer</Text>
-          <Text style={styles.expertPhone}>+55 21 96968-2162</Text>
-          <Text style={styles.expertHint}>Converse sobre seu treino e sua rotina de exercícios.</Text>
-        </View>
-        <Pressable accessibilityRole="link" accessibilityLabel="Conversar com Marcos Paulo pelo WhatsApp" onPress={() => void openProfessionalWhatsApp('5521969682162', '+55 21 96968-2162')} style={styles.whatsappButton}>
-          <Text style={styles.whatsappSymbol}>☎</Text>
-          <Text style={styles.whatsappLabel}>WhatsApp</Text>
-          <Text style={styles.whatsappArrow}>↗</Text>
-        </Pressable>
-      </View>
-
       <View style={styles.sourcesCard}><Text style={styles.eyebrow}>BASEADO EM ORIENTAÇÕES PÚBLICAS</Text><Text style={styles.sourcesTitle}>Como escolhemos as ideias</Text><Text style={styles.sourcesCopy}>Priorizamos variedade e alimentos in natura ou minimamente processados, como recomenda o Guia Alimentar brasileiro. As sugestões são educativas e não substituem um plano individual.</Text>{nutritionSources.map((source) => <Pressable key={source.url} accessibilityRole="link" onPress={() => void openSource(source.url)} style={styles.sourceLink}><Text style={styles.sourceText}>{source.label}  ↗</Text></Pressable>)}</View>
 
     </Screen>
