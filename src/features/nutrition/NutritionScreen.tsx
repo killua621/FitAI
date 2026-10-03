@@ -4,6 +4,7 @@ import { AppTabBar } from '@/components/AppTabBar';
 import { PageIntro } from '@/components/PageIntro';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { FoodPlanner } from '@/features/nutrition/FoodPlanner';
 import { allergyOptions, MealIdea, mealIdeas, nutritionSources } from '@/features/nutrition/nutritionContent';
 import { theme } from '@/theme';
 
@@ -76,6 +77,8 @@ export default function NutritionScreen() {
         <Text style={styles.allergyDisclaimer}>As sugestões são filtradas por ingredientes conhecidos; não detectamos traços ou contaminação cruzada. Confira sempre os rótulos.</Text>
         <Pressable accessibilityRole="button" disabled={savingAllergies} onPress={() => void saveAllergies()} style={[styles.allergySave, savingAllergies && { opacity: 0.7 }]}><Text style={styles.allergySaveText}>{savingAllergies ? 'Salvando…' : 'Salvar ponto de atenção'}</Text></Pressable>
       </View>
+
+      <FoodPlanner />
 
       <View style={styles.sectionHeading}><View><Text style={styles.eyebrow}>IDEIAS PARA O DIA</Text><Text style={styles.sectionTitle}>Monte uma refeição</Text></View><Text style={styles.sectionHint}>ESCOLHA UM MOMENTO</Text></View>
       <View style={styles.categoryRow}>{categories.map((item) => <Pressable key={item} accessibilityRole="tab" accessibilityState={{ selected: category === item }} onPress={() => setCategory(item)} style={[styles.categoryPill, category === item && styles.categoryActive]}><Text style={[styles.categoryText, category === item && styles.categoryTextActive]}>{item}</Text></Pressable>)}</View>
