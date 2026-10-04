@@ -45,12 +45,113 @@ const demoEntries: DemoEntry[] = [
   { id: 'MfsDC0ymFm8', aliases: ['Rosca com halteres', 'Rosca alternada'] },
   { id: '0rRpv6o140o', aliases: ['Rosca martelo'] },
   { id: 'M88Bt4MMpkI', aliases: ['Tríceps na polia'] },
+  { id: 'YJ4kGE3eemY', aliases: ['Tríceps francês com halteres'] },
+  { id: 'nTTTjbA0TSU', aliases: ['Tríceps unilateral na polia'] },
+  { id: 'RhGjwIUe16E', aliases: ['Encolhimento com halteres'] },
+  { id: 'tm0IywBhIYM', aliases: ['Remada alta na polia'] },
+  { id: '3PDPiCoWF-Y', aliases: ['Flexão de punho com barra'] },
+  { id: 'Kx8rg0MJX_c', aliases: ['Extensão de punho com barra'] },
+  { id: 'Wf602gn_9zU', aliases: ['Cadeira adutora'] },
+  { id: 'Zss6E3VU6X0', aliases: ['Cadeira flexora'] },
+  { id: '824pMjvGXgc', aliases: ['Panturrilha em pé na máquina'] },
+  { id: 'jMWs_p-W9gY', aliases: ['Panturrilha sentado na máquina'] },
+  { id: 'z0rx9swRDR0', aliases: ['Extensão lombar'] },
   { id: 'uxPlAbWFUDs', aliases: ['Prancha'] },
   { id: 'x2gzR9zzSCw', aliases: ['Prancha lateral'] },
   { id: 'uAe1Uj3Y05k', aliases: ['Abdominal na máquina'] },
   { id: 'DYNewranZWc', aliases: ['Twist russo pernas levantadas', 'Abdominal russo'] },
 ];
 const demoVideoFor = (name: string) => demoEntries.find((entry) => entry.aliases.includes(name))?.id || '';
+
+export const trainingMuscleGroups = [
+  'Peito', 'Costas', 'Ombros', 'Bíceps', 'Tríceps', 'Trapézio', 'Antebraços',
+  'Quadríceps', 'Posterior de coxa', 'Glúteos', 'Adutores', 'Panturrilhas', 'Abdômen', 'Lombar',
+] as const;
+export type TrainingMuscleGroup = (typeof trainingMuscleGroups)[number];
+
+const exercisesByMuscleGroup: Record<TrainingMuscleGroup, ExerciseSeed[]> = {
+  Peito: [
+    { name: 'Supino reto com halteres', focus: 'Peitoral' },
+    { name: 'Supino inclinado com halteres', focus: 'Peitoral superior' },
+    { name: 'Supino máquina', focus: 'Peitoral' },
+    { name: 'Crucifixo na máquina', focus: 'Peitoral' },
+  ],
+  Costas: [
+    { name: 'Puxada na frente', focus: 'Dorsais' },
+    { name: 'Remada baixa na polia', focus: 'Costas médias' },
+    { name: 'Pullover na polia', focus: 'Dorsais' },
+    { name: 'Remada baixa com pegada fechada', focus: 'Costas médias' },
+  ],
+  Ombros: [
+    { name: 'Desenvolvimento sentado', focus: 'Ombros' },
+    { name: 'Elevação lateral', focus: 'Deltoide lateral', reps: '10–15' },
+    { name: 'Desenvolvimento na máquina', focus: 'Ombros' },
+    { name: 'Crucifixo inverso na máquina', focus: 'Deltoide posterior', reps: '10–15' },
+  ],
+  Bíceps: [
+    { name: 'Rosca alternada', focus: 'Bíceps', reps: '10–15' },
+    { name: 'Rosca martelo', focus: 'Bíceps e braquial', reps: '10–15' },
+  ],
+  Tríceps: [
+    { name: 'Tríceps na polia', focus: 'Tríceps', reps: '10–15' },
+    { name: 'Tríceps francês com halteres', focus: 'Tríceps', reps: '10–15' },
+  ],
+  Trapézio: [
+    { name: 'Encolhimento com halteres', focus: 'Trapézio', reps: '10–15' },
+    { name: 'Remada alta na polia', focus: 'Trapézio e ombros', reps: '10–15' },
+  ],
+  Antebraços: [
+    { name: 'Flexão de punho com barra', focus: 'Flexores do antebraço', reps: '12–15' },
+    { name: 'Extensão de punho com barra', focus: 'Extensores do antebraço', reps: '12–15' },
+  ],
+  Quadríceps: [
+    { name: 'Agachamento com halteres', focus: 'Quadríceps e glúteos' },
+    { name: 'Leg press horizontal', focus: 'Quadríceps e glúteos' },
+    { name: 'Cadeira extensora', focus: 'Quadríceps', reps: '10–15' },
+    { name: 'Afundo apoiado', focus: 'Quadríceps e glúteos' },
+  ],
+  'Posterior de coxa': [
+    { name: 'Levantamento romeno com halteres', focus: 'Posterior de coxa e glúteos' },
+    { name: 'Mesa flexora', focus: 'Posterior de coxa', reps: '10–15' },
+    { name: 'Cadeira flexora', focus: 'Posterior de coxa', reps: '10–15' },
+    { name: 'Levantamento terra romeno com barra', focus: 'Posterior de coxa e glúteos' },
+  ],
+  Glúteos: [
+    { name: 'Elevação pélvica', focus: 'Glúteo máximo' },
+    { name: 'Ponte de glúteos', focus: 'Glúteos' },
+    { name: 'Coice na polia', focus: 'Glúteos', reps: '10–15' },
+    { name: 'Cadeira abdutora', focus: 'Glúteo médio e abdutores', reps: '10–15' },
+  ],
+  Adutores: [
+    { name: 'Cadeira adutora', focus: 'Adutores do quadril', reps: '10–15' },
+  ],
+  Panturrilhas: [
+    { name: 'Panturrilha em pé na máquina', focus: 'Panturrilhas', reps: '10–15' },
+    { name: 'Panturrilha sentado na máquina', focus: 'Sóleo e panturrilhas', reps: '10–15' },
+  ],
+  Abdômen: [
+    { name: 'Abdominal na máquina', focus: 'Abdômen', reps: '10–15' },
+    { name: 'Prancha', focus: 'Estabilidade do tronco', reps: '20–40 s', rest: '45–60 s' },
+    { name: 'Prancha lateral', focus: 'Oblíquos e estabilidade do tronco', reps: '20–40 s', rest: '45–60 s' },
+    { name: 'Abdominal russo', focus: 'Oblíquos', reps: '10–15' },
+  ],
+  Lombar: [
+    { name: 'Extensão lombar', focus: 'Eretores da coluna', reps: '10–15' },
+    { name: 'Levantamento romeno com halteres', focus: 'Cadeia posterior e estabilização lombar' },
+  ],
+};
+
+export function buildCustomTrainingExercises(groups: TrainingMuscleGroup[], experienceLevel?: string | null): Exercise[] {
+  const beginner = experienceLevel === 'Estou começando';
+  const seeds = uniqueExercises(groups.flatMap((group) => exercisesByMuscleGroup[group] || []));
+  return seeds.map((exercise) => ({
+    ...exercise,
+    sets: beginner ? 2 : 3,
+    reps: exercise.reps || '8–12',
+    rest: exercise.rest || '90–120 s',
+    demoVideoId: demoVideoFor(exercise.name),
+  }));
+}
 
 function uniqueExercises(exercises: ExerciseSeed[]) {
   const seen = new Set<string>();

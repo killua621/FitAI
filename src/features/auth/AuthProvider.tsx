@@ -2,6 +2,10 @@ import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useSt
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { calculateAge } from '@/features/profile/dateOfBirth';
+import { getCurrentWeekStartKey } from '@/features/training/checkins';
+
+export type WorkoutCheckin = { checkin_date: string; workout_title: string; activity_type: string; workout_focus: string };
+export type TrainingWeekPlan = { week_start: string; weekday: number; muscle_groups: string[] };
 
 export type Profile = {
   id: string;
@@ -32,13 +36,17 @@ type AuthContextValue = {
   waterTotalMl: number;
   waterLoading: boolean;
   workoutCheckinDates: string[];
+  workoutCheckinDetails: WorkoutCheckin[];
+  trainingWeekPlans: TrainingWeekPlan[];
   weightHistory: { weight_kg: number; measured_at: string }[];
   refreshProfile: () => Promise<Profile | null>;
   refreshWater: () => Promise<number>;
   addWater: (amountMl: number) => Promise<void>;
   setWaterGoal: (goalMl: number) => Promise<void>;
   refreshWorkoutCheckins: () => Promise<string[]>;
-  addWorkoutCheckin: (workoutTitle: string, activityType?: string, focus?: string) => Promise<boolean>;
+  addWorkoutCheckin: (workoutTitle: string, activityType?: string, focus?: string, checkinDate?: string) => Promise<boolean>;
+  refreshTrainingWeekPlans: () => Promise<TrainingWeekPlan[]>;
+  saveTrainingWeekPlan: (weekday: number, muscleGroups: string[]) => Promise<void>;
   addWeighIn: (weightKg: number) => Promise<void>;
   saveProfile: (profile: Omit<Profile, 'id'>) => Promise<void>;
   signOut: () => Promise<void>;
@@ -54,6 +62,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [waterTotalMl, setWaterTotalMl] = useState(0);
   const [waterLoading, setWaterLoading] = useState(false);
   const [workoutCheckinDates, setWorkoutCheckinDates] = useState<string[]>([]);
+  const [workoutCheckinDetails, setWorkoutCheckinDetails] = useState<WorkoutCheckin[]>([]);
+  const [trainingWeekPlans, setTrainingWeekPlans] = useState<TrainingWeekPlan[]>([]);
   const [weightHistory, setWeightHistory] = useState<{ weight_kg: number; measured_at: string }[]>([]);
 
   const refreshProfile = async () => {
@@ -128,10 +138,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
   };
 
   const loadWorkoutCheckins = async (userId: string) => {
-    const { data, error } = await supabase.from('workout_checkins').select('checkin_date')
+    const { data, error } = await supabase.from('workout_checkins').select('checkin_date,workout_title,activity_type,workout_focus')
       .eq('user_id', userId).order('checkin_date', { ascending: false }).limit(90);
     if (error) throw error;
-    return (data || []).map((row) => row.checkin_date as string);
+    return (data || []) as WorkoutCheckin[];
+  };
+
+  const loadTrainingWeekPlans = async (userId: string) => {
+    const { data, error } = await supabase.from('training_week_plans').select('week_start,weekday,muscle_groups')
+      .eq('week_start', getCurrentWeekStartKey()).order('weekday', { ascending: true });
+    if (error) throw error;
+    return (data || []) as TrainingWeekPlan[];
   };
 
   const loadWeightHistory = async (userId: string) => {
@@ -155,23 +172,49 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const refreshWorkoutCheckins = async () => {
     const userId = session?.user.id;
     if (!userId) { setWorkoutCheckinDates([]); return []; }
-    const dates = await loadWorkoutCheckins(userId);
+    const records = await loadWorkoutCheckins(userId);
+    setWorkoutCheckinDetails(records);
+    const dates = records.map((row) => row.checkin_date);
     setWorkoutCheckinDates(dates);
     return dates;
   };
 
-  const addWorkoutCheckin = async (workoutTitle: string, activityType = 'Musculação', focus = '') => {
+  const refreshTrainingWeekPlans = async () => {
+    const userId = session?.user.id;
+    if (!userId) { setTrainingWeekPlans([]); return []; }
+    const plans = await loadTrainingWeekPlans(userId);
+    setTrainingWeekPlans(plans);
+    return plans;
+  };
+
+  const saveTrainingWeekPlan = async (weekday: number, muscleGroups: string[]) => {
+    const userId = session?.user.id;
+    if (!userId) throw new Error('Entre novamente para salvar seu planejamento.');
+    if (!Number.isInteger(weekday) || weekday < 0 || weekday > 6 || muscleGroups.length > 3) throw new Error('Confira o dia e escolha até 3 grupos musculares.');
+    const weekStart = getCurrentWeekStartKey();
+    const { error } = await supabase.from('training_week_plans').upsert({
+      user_id: userId, week_start: weekStart, weekday, muscle_groups: muscleGroups, updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,week_start,weekday' });
+    if (error) throw error;
+    setTrainingWeekPlans((current) => [
+      ...current.filter((plan) => plan.week_start !== weekStart || plan.weekday !== weekday),
+      { week_start: weekStart, weekday, muscle_groups: muscleGroups },
+    ].sort((a, b) => a.weekday - b.weekday));
+  };
+
+  const addWorkoutCheckin = async (workoutTitle: string, activityType = 'Musculação', focus = '', checkinDate?: string) => {
     const userId = session?.user.id;
     if (!userId) throw new Error('Entre novamente para registrar seu treino.');
     const now = new Date();
-    const checkinDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const date = checkinDate || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const { data, error } = await supabase.from('workout_checkins').upsert({
-      user_id: userId, checkin_date: checkinDate, workout_title: workoutTitle,
+      user_id: userId, checkin_date: date, workout_title: workoutTitle,
       activity_type: activityType, workout_focus: focus,
     }, { onConflict: 'user_id,checkin_date', ignoreDuplicates: true }).select('checkin_date');
     if (error) throw error;
     if (!data?.length) return false;
-    setWorkoutCheckinDates((dates) => dates.includes(checkinDate) ? dates : [checkinDate, ...dates]);
+    setWorkoutCheckinDates((dates) => dates.includes(date) ? dates : [date, ...dates]);
+    setWorkoutCheckinDetails((records) => [{ checkin_date: date, workout_title: workoutTitle, activity_type: activityType, workout_focus: focus }, ...records.filter((item) => item.checkin_date !== date)]);
     return true;
   };
 
@@ -184,6 +227,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setProfile(null);
         setWaterTotalMl(0);
         setWorkoutCheckinDates([]);
+        setWorkoutCheckinDetails([]);
+        setTrainingWeekPlans([]);
         setWeightHistory([]);
         setProfileLoading(false);
         setWaterLoading(false);
@@ -192,16 +237,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
       setProfileLoading(true);
       setWaterLoading(true);
-      const [profileResult, waterResult, checkinsResult, weightsResult] = await Promise.all([
+      const [profileResult, waterResult, checkinsResult, weightsResult, plansResult] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle(),
         loadWaterForUser(currentSession.user.id),
         loadWorkoutCheckins(currentSession.user.id),
         loadWeightHistory(currentSession.user.id),
+        loadTrainingWeekPlans(currentSession.user.id).catch(() => [] as TrainingWeekPlan[]),
       ]);
       if (!active) return;
       setProfile(profileResult.data ? { ...profileResult.data, age: calculateAge(profileResult.data.date_of_birth) ?? profileResult.data.age } as Profile : null);
       setWaterTotalMl(waterResult);
-      setWorkoutCheckinDates(checkinsResult);
+      setWorkoutCheckinDetails(checkinsResult);
+      setWorkoutCheckinDates(checkinsResult.map((row) => row.checkin_date));
+      setTrainingWeekPlans(plansResult);
       setWeightHistory(weightsResult);
       setProfileLoading(false);
       setWaterLoading(false);
@@ -223,13 +271,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const value = useMemo<AuthContextValue>(() => ({
-    session, profile, loading, profileLoading, waterTotalMl, waterLoading, workoutCheckinDates, weightHistory,
-    refreshProfile, refreshWater, addWater, setWaterGoal, refreshWorkoutCheckins, addWorkoutCheckin, addWeighIn, saveProfile,
+    session, profile, loading, profileLoading, waterTotalMl, waterLoading, workoutCheckinDates, workoutCheckinDetails, trainingWeekPlans, weightHistory,
+    refreshProfile, refreshWater, addWater, setWaterGoal, refreshWorkoutCheckins, addWorkoutCheckin, refreshTrainingWeekPlans, saveTrainingWeekPlan, addWeighIn, saveProfile,
     signOut: async () => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     },
-  }), [session, profile, loading, profileLoading, waterTotalMl, waterLoading, workoutCheckinDates, weightHistory]);
+  }), [session, profile, loading, profileLoading, waterTotalMl, waterLoading, workoutCheckinDates, workoutCheckinDetails, trainingWeekPlans, weightHistory]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -1,128 +1,72 @@
-import { useEffect, useState } from 'react';
-import { ExerciseDemo } from '@/features/training/ExerciseDemo';
-import { router } from 'expo-router';
-import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppTabBar } from '@/components/AppTabBar';
-import { Button } from '@/components/Button';
 import { PageIntro } from '@/components/PageIntro';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { getCurrentWeekCheckins } from '@/features/training/checkins';
+import { TrainingWeekBuilder } from '@/features/training/TrainingWeekBuilder';
 import { buildTrainingProgram } from '@/features/training/programGenerator';
 import { theme } from '@/theme';
-import { getCurrentWeekCheckins, getNextTrainingSessionIndex } from '@/features/training/checkins';
 
 export default function TrainingScreen() {
-  const { width } = useWindowDimensions();
-  const { profile, workoutCheckinDates, refreshWorkoutCheckins } = useAuth();
-  const wide = width >= 800;
+  const { profile, workoutCheckinDates } = useAuth();
   const program = buildTrainingProgram(profile || {});
-  const initialSessionIndex = getNextTrainingSessionIndex(workoutCheckinDates, program.sessions.length);
-  const [selectedIndex, setSelectedIndex] = useState(initialSessionIndex);
-  const [activeDemoKey, setActiveDemoKey] = useState<string | null>(null);
-  const [guidanceOpen, setGuidanceOpen] = useState(false);
-  const selectedSession = program.sessions[selectedIndex] || program.sessions[0];
-  const isMinor = Boolean(profile?.age && profile.age < 18);
   const week = getCurrentWeekCheckins(workoutCheckinDates);
-  const alreadyCheckedIn = week.days.find((day) => day.isToday)?.checkedIn || false;
+  const goalDays = Math.max(1, profile?.training_days || 3);
+  const weeklyProgress = Math.min(100, Math.round((week.count / goalDays) * 100));
+
   const contactTrainer = async () => {
     try { await Linking.openURL('https://wa.me/5521969682162'); }
     catch { Alert.alert('Não foi possível abrir o WhatsApp', 'Tente novamente ou salve o número +55 21 96968-2162 nos seus contatos.'); }
   };
-  useEffect(() => { void refreshWorkoutCheckins().catch(() => undefined); }, []);
+
   return (
     <Screen scroll footer={<AppTabBar active="/workout" />} style={styles.screen}>
-      <PageIntro eyebrow="TREINO FEITO PARA SUA ROTINA" title="Seu treino" description="Sessões organizadas pelos seus dias, experiência, objetivo e grupos musculares que você escolheu priorizar." />
-      <View style={[styles.topGrid, wide && styles.topGridWide]}>
-        <View style={[styles.sessionCard, wide && styles.sessionCardWide]}>
-          <View style={styles.sessionTop}><Text style={styles.sessionTag}>SEU PLANO</Text><Text style={styles.sessionLevel}>{profile?.experience_level === 'Estou começando' ? 'INICIANTE' : 'PROGRESSIVO'}</Text></View>
-          <Text style={styles.sessionTitle}>{program.title}</Text>
-          <Text style={styles.sessionCopy}>{program.subtitle}</Text>
-          <View style={styles.sessionMeta}><Text style={styles.metaText}>◷  {selectedSession.duration} min</Text><Text style={styles.metaText}>↗  {selectedSession.exercises.length} exercícios</Text></View>
-          <Button title="Ver orientação do treino" onPress={() => setGuidanceOpen(true)} style={styles.startButton} />
-          <Pressable accessibilityRole="button" disabled={alreadyCheckedIn} onPress={() => router.replace('/home')} style={({ pressed }) => [{ alignSelf: 'flex-start', minHeight: 42, borderRadius: 13, backgroundColor: alreadyCheckedIn ? theme.colors.purpleSoft : theme.colors.orange, paddingHorizontal: 15, marginTop: 10, justifyContent: 'center' }, pressed && { opacity: 0.8 }]}><Text style={{ color: theme.colors.dark, fontSize: 10, fontWeight: '900' }}>{alreadyCheckedIn ? '✓ Treino de hoje contado' : 'Fazer check-in na aba Início'}</Text></Pressable>
-          <Text style={{ color: '#B5A6C0', fontSize: 9, marginTop: 7 }}>{week.count} check-in{week.count === 1 ? '' : 's'} nesta semana</Text>
-          <View style={styles.sessionOrb}><Text style={styles.sessionOrbText}>F</Text></View>
-        </View>
-        <View style={styles.weekCard}>
-          <Text style={styles.smallLabel}>FREQUÊNCIA ESCOLHIDA</Text><Text style={styles.weekTitle}>{program.sessions.length} dias por semana</Text><Text style={styles.weekCopy}>Cada sessão alterna ênfases e movimentos para equilibrar o trabalho dos grupos musculares.</Text>
-          <View style={styles.days}>{program.sessions.map((session, index) => <View key={session.id} style={[styles.day, index === selectedIndex && styles.dayActive]}><Text style={[styles.dayText, index === selectedIndex && styles.dayTextActive]}>{index + 1}</Text></View>)}</View>
-          <Text style={styles.weekFoot}>ALTERNÂNCIA COM RECUPERAÇÃO</Text>
-        </View>
+      <PageIntro eyebrow="MOVIMENTO NO SEU RITMO" title="Seu treino, dia a dia" description="Monte sua semana escolhendo os grupos que quer trabalhar em cada dia. A série aparece na hora, com vídeos de cada exercício." />
+
+      <View style={styles.weekSummary}>
+        <View style={styles.summaryTop}><View><Text style={styles.eyebrow}>SEU RITMO NESTA SEMANA</Text><Text style={styles.summaryTitle}>{week.count} de {goalDays} treinos</Text></View><View style={styles.summaryIcon}><Text style={styles.summaryIconText}>✦</Text></View></View>
+        <Text style={styles.summaryCopy}>Cada dia ganha sua própria combinação de músculos e exercícios.</Text>
+        <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${weeklyProgress}%` }]} /></View>
+        <Text style={styles.summaryFoot}>Comece por hoje; sua divisão pode mudar ao longo da semana.</Text>
       </View>
 
-      {isMinor ? (
-        <View style={styles.guidanceCard}><Text style={styles.sectionEyebrow}>ORIENTAÇÃO DE IDADE</Text><Text style={styles.sectionTitle}>Treino com supervisão</Text><Text style={styles.guidanceText}>Este plano é uma referência geral para adultos. Como seu perfil informa menos de 18 anos, monte a rotina com um profissional qualificado e um responsável, com carga e progressão adequadas à sua idade.</Text></View>
-      ) : (
-        <>
-          <View style={styles.section}><View><Text style={styles.sectionEyebrow}>SUA SESSÃO {String(selectedIndex + 1).padStart(2, '0')}</Text><Text style={styles.sectionTitle}>{selectedSession.title}</Text></View><Text style={styles.sessionFocus}>{selectedSession.focus}</Text></View>
-          <Text style={styles.videoHint}>Assista às demonstrações do canal selecionado dentro do app. Toque em qualquer exercício para abrir o vídeo; os músculos trabalhados aparecem destacados.</Text>
-          <View style={styles.sessionPicker}>{program.sessions.map((session, index) => <Pressable key={session.id} onPress={() => setSelectedIndex(index)} style={[styles.pickerPill, selectedIndex === index && styles.pickerPillActive]}><Text style={[styles.pickerText, selectedIndex === index && styles.pickerTextActive]}>Dia {index + 1}</Text></Pressable>)}</View>
-          <View style={styles.exerciseList}>{selectedSession.exercises.map((exercise, index) => {
-            const exerciseKey = `${selectedSession.id}-${index}`;
-            const demoOpen = activeDemoKey === exerciseKey;
-            return <View key={exerciseKey} style={[styles.exercise, index === selectedSession.exercises.length - 1 && styles.lastExercise]}><View style={styles.exerciseNumber}><Text style={styles.exerciseNumberText}>{String(index + 1).padStart(2, '0')}</Text></View><View style={styles.exerciseCopy}><Text style={styles.exerciseName}>{exercise.name}</Text><Text style={styles.exerciseDetail}>{exercise.focus}</Text><Text style={styles.exercisePrescription}>{exercise.sets} séries · {exercise.reps} repetições · pausa {exercise.rest}</Text><View style={styles.muscleTags}>{exercise.focus.split(/\s+e\s+/i).map((muscle, muscleIndex) => <Text key={`${exerciseKey}-muscle-${muscleIndex}`} style={styles.muscleTag}>{muscle}</Text>)}</View><Pressable accessibilityRole="button" accessibilityLabel={`${demoOpen ? 'Fechar' : 'Ver'} demonstração de ${exercise.name}`} onPress={() => exercise.demoVideoId && setActiveDemoKey(demoOpen ? null : exerciseKey)} style={styles.demoLink}><Text style={styles.demoLinkText}>{demoOpen ? '×  Fechar vídeo' : '▶  Ver exercício'}</Text></Pressable>{demoOpen && exercise.demoVideoId ? <ExerciseDemo videoId={exercise.demoVideoId} title={`Demonstração: ${exercise.name}`} /> : null}{!exercise.demoVideoId ? <Text style={styles.videoUnavailable}>Demonstração em preparação.</Text> : null}</View></View>;
-          })}</View>
-          <View style={styles.guidanceCard}><Text style={styles.sectionEyebrow}>PROGRESSÃO SIMPLES</Text><Text style={styles.guidanceText}>{program.method}</Text></View>
-          <View style={styles.guidanceCard}><Text style={styles.sectionEyebrow}>MOVIMENTO AERÓBICO</Text><Text style={styles.guidanceText}>{program.cardio}</Text></View>
-        </>
-      )}
-      <View style={trainerStyles.card}>
-        <Text style={styles.sectionEyebrow}>ACOMPANHAMENTO PROFISSIONAL</Text>
-        <Text style={trainerStyles.title}>Fale com seu personal trainer</Text>
-        <Text style={trainerStyles.name}>Marcos Paulo · Personal trainer</Text>
-        <Text style={trainerStyles.phone}>+55 21 96968-2162</Text>
-        <Text style={trainerStyles.hint}>Converse sobre seu treino e sua rotina de exercícios.</Text>
-        <Pressable accessibilityRole="link" accessibilityLabel="Conversar com Marcos Paulo pelo WhatsApp" onPress={() => void contactTrainer()} style={trainerStyles.whatsappButton}>
-          <Text style={trainerStyles.whatsappSymbol}>☎</Text>
-          <Text style={trainerStyles.whatsappLabel}>WhatsApp</Text>
-          <Text style={trainerStyles.whatsappArrow}>↗</Text>
-        </Pressable>
+      <TrainingWeekBuilder />
+
+      <View style={styles.guidanceCard}><View style={styles.cardIcon}><Text style={styles.cardIconText}>↗</Text></View><Text style={styles.eyebrow}>COMO PROGREDIR</Text><Text style={styles.cardTitle}>Técnica primeiro, carga aos poucos</Text><Text style={styles.cardCopy}>{program.method}</Text></View>
+      <View style={styles.guidanceCard}><View style={styles.cardIcon}><Text style={styles.cardIconText}>⌁</Text></View><Text style={styles.eyebrow}>MOVIMENTO AERÓBICO</Text><Text style={styles.cardTitle}>Força e condicionamento podem andar juntos</Text><Text style={styles.cardCopy}>{program.cardio}</Text></View>
+
+      <View style={styles.trainerCard}>
+        <View><Text style={styles.eyebrow}>ACOMPANHAMENTO PROFISSIONAL</Text><Text style={styles.trainerTitle}>Fale com seu personal trainer</Text><Text style={styles.trainerName}>Marcos Paulo · Personal trainer</Text><Text style={styles.trainerPhone}>+55 21 96968-2162</Text></View>
+        <Pressable accessibilityRole="link" accessibilityLabel="Conversar com Marcos Paulo pelo WhatsApp" onPress={() => void contactTrainer()} style={styles.whatsappButton}><Text style={styles.whatsappGlyph}>◉</Text><Text style={styles.whatsappText}>Chamar no WhatsApp</Text><Text style={styles.whatsappArrow}>↗</Text></Pressable>
       </View>
-      <Text style={styles.footnote}>Plano educativo. Se você tem lesão, dor persistente ou condição de saúde, ajuste o treino com um profissional antes de iniciar.</Text>
-      <Modal transparent visible={guidanceOpen} animationType="fade" onRequestClose={() => setGuidanceOpen(false)}>
-        <View style={modalStyles.shade}><View style={modalStyles.card}>
-          <View style={modalStyles.header}><View><Text style={styles.sectionEyebrow}>GUIA DO SEU PLANO</Text><Text style={modalStyles.title}>{selectedSession.title}</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Fechar orientação" onPress={() => setGuidanceOpen(false)} style={modalStyles.close}><Text style={modalStyles.closeText}>×</Text></Pressable></View>
-          <ScrollView style={modalStyles.scroll} contentContainerStyle={modalStyles.content}>
-            <Text style={modalStyles.label}>Como executar</Text><Text style={styles.guidanceText}>{program.method}</Text>
-            <Text style={modalStyles.label}>Movimento aeróbico</Text><Text style={styles.guidanceText}>{program.cardio}</Text>
-            <Text style={modalStyles.safety}>Use os vídeos de cada exercício para revisar o movimento. Se sentir dor, interrompa e procure orientação profissional. Ajuste a rotina com um profissional se tiver lesão ou condição de saúde.</Text>
-          </ScrollView>
-          <Pressable accessibilityRole="button" onPress={() => setGuidanceOpen(false)} style={modalStyles.done}><Text style={modalStyles.doneText}>Entendi</Text></Pressable>
-        </View></View>
-      </Modal>
+      <Text style={styles.safety}>Treino educativo. Ajuste cargas à sua experiência, use os vídeos para revisar a execução e interrompa se sentir dor. Se tiver lesão ou condição de saúde, converse com um profissional.</Text>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { paddingTop: 7 }, topGrid: { gap: 14, marginBottom: 31 }, topGridWide: { flexDirection: 'row' }, sessionCard: { minHeight: 270, borderRadius: 25, backgroundColor: theme.colors.dark, padding: 22, overflow: 'hidden' }, sessionCardWide: { flex: 1.35 }, sessionTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, sessionTag: { color: theme.colors.orange, fontSize: 9, letterSpacing: 1.3, fontWeight: '900' }, sessionLevel: { color: theme.colors.orangeDeep, backgroundColor: theme.colors.darkSoft, fontSize: 8, letterSpacing: 1, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, fontWeight: '800' }, sessionTitle: { color: theme.colors.white, fontSize: 25, lineHeight: 29, fontWeight: '900', marginTop: 22, maxWidth: 360 }, sessionCopy: { color: '#B4A6BA', fontSize: 13, lineHeight: 19, marginTop: 7, maxWidth: 420 }, sessionMeta: { flexDirection: 'row', gap: 18, marginTop: 17 }, metaText: { color: '#DFD2E8', fontSize: 11, fontWeight: '700' }, startButton: { alignSelf: 'flex-start', minHeight: 46, paddingHorizontal: 20, marginTop: 19 }, sessionOrb: { position: 'absolute', right: -20, bottom: -55, width: 150, height: 150, borderRadius: 75, borderWidth: 1, borderColor: '#4A3858', alignItems: 'center', justifyContent: 'center' }, sessionOrbText: { color: '#4D355F', fontSize: 68, fontWeight: '900' }, weekCard: { flex: 1, minHeight: 270, borderRadius: 25, backgroundColor: theme.colors.surface, padding: 22, borderWidth: 1, borderColor: theme.colors.line, justifyContent: 'center' }, smallLabel: { color: theme.colors.orangeDeep, fontSize: 9, letterSpacing: 1.3, fontWeight: '900' }, weekTitle: { color: theme.colors.ink, fontSize: 20, fontWeight: '900', marginTop: 8 }, weekCopy: { color: theme.colors.muted, fontSize: 12, lineHeight: 18, marginTop: 6 }, days: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 23, gap: 7 }, day: { width: 30, height: 30, borderRadius: 15, backgroundColor: theme.colors.background, alignItems: 'center', justifyContent: 'center' }, dayActive: { backgroundColor: theme.colors.purple }, dayText: { color: theme.colors.muted, fontWeight: '700', fontSize: 10 }, dayTextActive: { color: theme.colors.dark }, weekFoot: { color: theme.colors.purpleMuted, fontSize: 8, letterSpacing: 1.2, fontWeight: '900', marginTop: 12 }, section: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, marginBottom: 13 }, sectionEyebrow: { color: theme.colors.orangeDeep, fontSize: 9, letterSpacing: 1.3, fontWeight: '900', marginBottom: 5 }, sectionTitle: { color: theme.colors.ink, fontSize: 21, fontWeight: '900' }, sessionFocus: { color: theme.colors.muted, fontSize: 11, marginBottom: 4 }, videoHint: { color: theme.colors.purpleMuted, fontSize: 10, lineHeight: 16, marginBottom: 12 }, muscleTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 7 }, muscleTag: { color: theme.colors.orangeDeep, backgroundColor: theme.colors.orangeSoft, borderRadius: 8, overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 4, fontSize: 9, fontWeight: '800' }, videoUnavailable: { color: theme.colors.muted, fontSize: 10, marginTop: 7 }, sessionPicker: { flexDirection: 'row', gap: 8, marginBottom: 12, flexWrap: 'wrap' }, pickerPill: { minHeight: 36, borderRadius: 12, paddingHorizontal: 14, borderWidth: 1, borderColor: theme.colors.line, backgroundColor: theme.colors.surface, alignItems: 'center', justifyContent: 'center' }, pickerPillActive: { backgroundColor: theme.colors.purpleSurface, borderColor: theme.colors.purple }, pickerText: { color: theme.colors.muted, fontSize: 11, fontWeight: '800' }, pickerTextActive: { color: theme.colors.white }, exerciseList: { borderRadius: 22, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, paddingHorizontal: 17, marginBottom: 17 }, exercise: { minHeight: 80, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: theme.colors.line, gap: 13 }, lastExercise: { borderBottomWidth: 0 }, exerciseNumber: { width: 38, height: 38, borderRadius: 13, backgroundColor: theme.colors.orangeSoft, alignItems: 'center', justifyContent: 'center' }, exerciseNumberText: { color: theme.colors.orangeDeep, fontWeight: '900', fontSize: 11 }, exerciseCopy: { flex: 1, paddingVertical: 12 }, exerciseName: { color: theme.colors.ink, fontSize: 14, fontWeight: '800' }, exerciseDetail: { color: theme.colors.muted, fontSize: 10, marginTop: 3 }, exercisePrescription: { color: theme.colors.orangeDeep, fontSize: 10, marginTop: 5, fontWeight: '800' }, demoLink: { alignSelf: 'flex-start', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7, marginTop: 7, backgroundColor: theme.colors.purpleSoft }, demoLinkText: { color: theme.colors.purpleMuted, fontSize: 10, fontWeight: '900' }, guidanceCard: { borderRadius: 20, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 18, marginBottom: 12 }, guidanceText: { color: theme.colors.muted, fontSize: 12, lineHeight: 19 }, footnote: { color: theme.colors.muted, fontSize: 10, lineHeight: 16, marginTop: 5, marginBottom: 18 },
+  screen: { paddingTop: 7 },
+  weekSummary: { borderRadius: 24, backgroundColor: theme.colors.dark, padding: 20, marginBottom: 17 },
+  summaryTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  eyebrow: { color: theme.colors.orangeDeep, fontSize: 9, letterSpacing: 1.2, fontWeight: '900' },
+  summaryTitle: { color: theme.colors.white, fontSize: 22, fontWeight: '900', marginTop: 6 },
+  summaryIcon: { width: 43, height: 43, borderRadius: 15, backgroundColor: '#362342', alignItems: 'center', justifyContent: 'center' },
+  summaryIconText: { color: theme.colors.orange, fontSize: 22 },
+  summaryCopy: { color: '#C3B7CC', fontSize: 11, lineHeight: 17, marginTop: 8 },
+  progressTrack: { height: 7, borderRadius: 4, backgroundColor: '#392C43', marginTop: 15, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 4, backgroundColor: theme.colors.orange },
+  summaryFoot: { color: '#A999B1', fontSize: 9, marginTop: 8 },
+  guidanceCard: { borderRadius: 21, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 17, marginBottom: 11 },
+  cardIcon: { width: 37, height: 37, borderRadius: 13, backgroundColor: theme.colors.purpleSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 13 },
+  cardIconText: { color: theme.colors.orange, fontSize: 19, fontWeight: '900' },
+  cardTitle: { color: theme.colors.ink, fontSize: 15, fontWeight: '900', lineHeight: 21, marginTop: 6 },
+  cardCopy: { color: theme.colors.muted, fontSize: 10, lineHeight: 16, marginTop: 6 },
+  trainerCard: { borderRadius: 21, backgroundColor: theme.colors.dark, borderWidth: 1, borderColor: theme.colors.line, padding: 18, marginTop: 7 },
+  trainerTitle: { color: theme.colors.white, fontSize: 17, fontWeight: '900', marginTop: 7 },
+  trainerName: { color: '#E0D3E6', fontSize: 11, fontWeight: '800', marginTop: 7 },
+  trainerPhone: { color: '#B5A6C0', fontSize: 10, marginTop: 4 },
+  whatsappButton: { minHeight: 43, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 13, borderRadius: 13, backgroundColor: '#25D366', marginTop: 14 },
+  whatsappGlyph: { color: '#FFFFFF', fontSize: 14, fontWeight: '900' }, whatsappText: { color: '#092313', fontSize: 10, fontWeight: '900' }, whatsappArrow: { color: '#092313', fontSize: 14, fontWeight: '900' },
+  safety: { color: theme.colors.muted, fontSize: 9, lineHeight: 14, marginTop: 14, marginBottom: 12 },
 });
-
-const modalStyles = StyleSheet.create({
-  shade: { flex: 1, backgroundColor: 'rgba(0,0,0,0.78)', alignItems: 'center', justifyContent: 'center', padding: 18 },
-  card: { width: '100%', maxWidth: 580, maxHeight: '88%', borderRadius: 24, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 20 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  title: { color: theme.colors.ink, fontSize: 21, fontWeight: '900', marginTop: 5 },
-  close: { width: 38, height: 38, borderRadius: 13, backgroundColor: theme.colors.purpleSoft, alignItems: 'center', justifyContent: 'center' },
-  closeText: { color: theme.colors.orange, fontSize: 25, fontWeight: '700', marginTop: -2 },
-  scroll: { marginTop: 10 },
-  content: { paddingBottom: 12 },
-  label: { color: theme.colors.orangeDeep, fontSize: 10, fontWeight: '900', letterSpacing: 1, marginTop: 15, marginBottom: 6 },
-  safety: { color: theme.colors.muted, backgroundColor: theme.colors.background, borderRadius: 14, padding: 12, fontSize: 10, lineHeight: 16, marginTop: 14 },
-  done: { minHeight: 44, borderRadius: 13, backgroundColor: theme.colors.orange, alignItems: 'center', justifyContent: 'center', marginTop: 10 },
-  doneText: { color: theme.colors.dark, fontSize: 11, fontWeight: '900' },
-});
-
-const trainerStyles = StyleSheet.create({
-  card: { borderRadius: 20, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 18, marginTop: 18, marginBottom: 10 },
-  title: { color: theme.colors.ink, fontSize: 17, fontWeight: '900', marginTop: 8 },
-  name: { color: theme.colors.ink, fontSize: 12, fontWeight: '800', marginTop: 7 },
-  phone: { color: theme.colors.muted, fontSize: 11, marginTop: 4 },
-  hint: { color: theme.colors.muted, fontSize: 10, lineHeight: 15, marginTop: 7 },
-  whatsappButton: { minHeight: 46, borderRadius: 14, backgroundColor: '#25D366', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 14, paddingHorizontal: 14 },
-  whatsappSymbol: { color: '#FFFFFF', fontSize: 17, fontWeight: '900' },
-  whatsappLabel: { color: '#092313', fontSize: 12, fontWeight: '900' },
-  whatsappArrow: { color: '#092313', fontSize: 15, fontWeight: '900' },
-});
-
-

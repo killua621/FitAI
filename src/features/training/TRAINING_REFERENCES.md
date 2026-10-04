@@ -1,12 +1,14 @@
 # Base técnica para a montagem dos treinos
 
-Revisado em 03/10/2026.
+Revisado em 04/10/2026.
 
 ## Princípios aplicados
 
 - O modo automático do ScholzFit inicia com ênfase em membros inferiores para o perfil fisiológico feminino e em tronco e braços para o masculino, conforme a preferência de produto definida pelo responsável pelo app. Esse padrão não é apresentado como necessidade biológica: o usuário pode escolher corpo equilibrado ou outra ênfase no onboarding e no perfil.
 - O programa mantém exercícios para os principais grupos musculares, ajusta a distribuição ao número de sessões e à experiência declarada, usa progressão gradual e evita exigir falha muscular em todas as séries.
 - Quando a pessoa escolhe explicitamente “Mais pernas e glúteos”, o gerador agora cria sessões de inferiores dedicadas: 3 sessões em rotinas de 3, 4 ou 5 dias; 4 sessões em rotinas de 6 dias. Em rotinas de 2 dias, ambas são de corpo todo com foco adicional em inferiores. Exercícios de tronco continuam presentes para manter uma rotina abrangente. A escolha “Mais tronco e braços” usa uma distribuição espelhada, mantendo trabalho de pernas.
+- No planejador semanal, a pessoa monta sua combinação por dia e recebe até 4 exercícios para grupos grandes e 2 para grupos menores (3 séries por exercício para quem já treina; 2 séries como ponto de partida para iniciantes). “Quatro de peito e dois de tríceps” é uma estrutura prática configurável, não uma regra clínica; o volume efetivo deve considerar experiência, recuperação e estímulo indireto dos exercícios compostos.
+- O registro de treinos usa a data local e associa um check-in a cada dia. A semana visual começa na segunda-feira; o filtro por datas mostra a nova semana zerada sem excluir o histórico anterior. As divisões planejadas ficam separadas por conta e por segunda-feira de referência.
 - Cada exercício que o gerador pode incluir tem um vídeo demonstrativo associado. Os vídeos são incorporados do YouTube; o aplicativo não armazena os arquivos localmente.
 - A rotina é educativa. Dor, lesão, condição clínica, gestação ou idade abaixo de 18 anos exigem adaptação com profissional qualificado.
 
@@ -21,5 +23,7 @@ Revisado em 03/10/2026.
    - [PubMed: PMID 32218059](https://pubmed.ncbi.nlm.nih.gov/32218059/)
 4. Hagstrom et al. (2020), revisão sistemática e meta-análise sobre treino de força em mulheres. Concluiu que o treinamento de resistência melhora força e hipertrofia; volume e frequência importam para os ganhos de força.
    - [PubMed: PMID 31820374](https://pubmed.ncbi.nlm.nih.gov/31820374/)
+5. Leandro Twin, profissional de educação física (CREF 128544-G/SP), biblioteca de vídeos demonstrativos por grupo muscular. Alguns vídeos do catálogo ScholzFit usam esses links incorporados do YouTube como apoio visual à execução; o app não baixa nem hospeda os arquivos.
+   - [Lista de vídeos de exercícios por grupo muscular (PDF)](https://www.leandrotwin.com.br/assessoria/lista-de-videos-de-exercicios.pdf)
 
 Esses estudos não justificam impor uma divisão diferente somente pelo sexo. Por isso, a ênfase por perfil é um ponto de partida configurável, não uma prescrição individual nem uma regra fisiológica.
