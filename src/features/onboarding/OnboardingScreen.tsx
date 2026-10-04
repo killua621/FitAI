@@ -43,6 +43,11 @@ export default function OnboardingScreen() {
     return savedDays.length ? savedDays.slice(0, 6) : trainingDays.slice(0, preferredCount);
   });
   const selectedDayCount = trainingDays.filter((day) => selectedWeekdays.includes(day)).length;
+  const automaticEmphasisLabel = energyProfile === 'female'
+    ? 'Automático · mais pernas e glúteos'
+    : energyProfile === 'male'
+      ? 'Automático · mais tronco e braços'
+      : 'Automático · corpo equilibrado';
   const resizeWeekdays = (current: string[], target: number) => {
     const ordered = trainingDays.filter((day) => current.includes(day));
     return [...ordered, ...trainingDays.filter((day) => !ordered.includes(day))].slice(0, target);
@@ -131,9 +136,9 @@ export default function OnboardingScreen() {
               return <Pressable key={day} accessibilityRole="checkbox" accessibilityLabel={trainingDayLabels[day]} accessibilityState={{ checked: selected }} onPress={() => setSelectedWeekdays((current) => { if (current.includes(day)) return current.filter((candidate) => candidate !== day); if (trainingDays.filter((candidate) => current.includes(candidate)).length >= 6) { Alert.alert('Rotina equilibrada', 'Selecione até 6 dias de treino por semana para manter espaço para recuperação.'); return current; } return trainingDays.filter((candidate) => current.includes(candidate) || candidate === day); })} style={[styles.dayPill, wide && styles.dayPillWide, selected && styles.dayActive]}><Text style={[styles.dayText, selected && styles.dayTextActive]}>{trainingDayLabels[day]}</Text></Pressable>;
             })}</View>
             <Text style={[styles.label, styles.emphasisLabel]}>Como quer distribuir a ênfase?</Text>
-            <Text style={styles.helperTop}>A sugestão acompanha o parâmetro fisiológico informado, mas você pode escolher outra distribuição.</Text>
+            <Text style={styles.helperTop}>No automático, o foco inicial acompanha o perfil selecionado. É uma preferência ajustável: escolha outra distribuição se combinar melhor com você.</Text>
             <View style={styles.emphasisOptions}>{[
-              ['automatic', 'Adaptar ao meu perfil'], ['balanced', 'Corpo todo equilibrado'], ['lower_body', 'Mais pernas e glúteos'], ['upper_body', 'Mais tronco e braços'],
+              ['automatic', automaticEmphasisLabel], ['balanced', 'Corpo todo equilibrado'], ['lower_body', 'Mais pernas e glúteos'], ['upper_body', 'Mais tronco e braços'],
             ].map(([value, label]) => <Pressable key={value} accessibilityRole="radio" accessibilityState={{ checked: trainingEmphasis === value }} onPress={() => setTrainingEmphasis(value as typeof trainingEmphasis)} style={[styles.emphasisOption, trainingEmphasis === value && styles.emphasisOptionActive]}><Text style={[styles.emphasisText, trainingEmphasis === value && styles.emphasisTextActive]}>{label}</Text><Text style={[styles.emphasisCheck, trainingEmphasis === value && styles.emphasisCheckActive]}>{trainingEmphasis === value ? '✓' : '+'}</Text></Pressable>)}</View>
             <View style={styles.note}><View style={styles.noteMark}><Text style={styles.noteIcon}>✳</Text></View><Text style={styles.noteText}>Sua rotina pode mudar. A gente se adapta junto.</Text></View>
           </View>

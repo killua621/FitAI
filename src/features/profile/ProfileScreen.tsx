@@ -18,6 +18,11 @@ export default function ProfileScreen() {
   const [goal, setGoal] = useState(goals[0]);
   const [trainingEmphasis, setTrainingEmphasis] = useState<'automatic' | 'balanced' | 'lower_body' | 'upper_body'>('automatic');
   const [saving, setSaving] = useState(false);
+  const automaticEmphasisLabel = profile?.energy_equation_profile === 'female'
+    ? 'Automático · mais pernas e glúteos'
+    : profile?.energy_equation_profile === 'male'
+      ? 'Automático · mais tronco e braços'
+      : 'Automático · corpo equilibrado';
 
   useEffect(() => {
     if (!profile) return;
@@ -59,8 +64,8 @@ export default function ProfileScreen() {
           <Text style={styles.helper}>Informe uma vez para sua idade acompanhar seus aniversários.</Text>
         </>}
         <Text style={styles.label}>Objetivo principal</Text><View style={styles.choices}>{goals.map((item) => <Pressable key={item} accessibilityRole="radio" accessibilityState={{ checked: goal === item }} onPress={() => setGoal(item)} style={[styles.choice, goal === item && styles.choiceActive]}><Text style={[styles.choiceText, goal === item && styles.choiceTextActive]}>{item}</Text></Pressable>)}</View>
-        <Text style={styles.label}>Ênfase do treino</Text><Text style={styles.helper}>Escolha os grupos que quer priorizar. Ao salvar, os exercícios e acessórios do plano mudam junto.</Text><View style={styles.choices}>{[
-          ['automatic', 'Automático equilibrado'], ['balanced', 'Corpo todo equilibrado'], ['lower_body', 'Mais pernas e glúteos'], ['upper_body', 'Mais tronco e braços'],
+        <Text style={styles.label}>Ênfase do treino</Text><Text style={styles.helper}>O automático usa o foco inicial do seu perfil, como preferência ajustável. Você pode personalizar a divisão quando quiser.</Text><View style={styles.choices}>{[
+          ['automatic', automaticEmphasisLabel], ['balanced', 'Corpo todo equilibrado'], ['lower_body', 'Mais pernas e glúteos'], ['upper_body', 'Mais tronco e braços'],
         ].map(([value, label]) => <Pressable key={value} accessibilityRole="radio" accessibilityState={{ checked: trainingEmphasis === value }} onPress={() => setTrainingEmphasis(value as typeof trainingEmphasis)} style={[styles.choice, trainingEmphasis === value && styles.choiceActive]}><Text style={[styles.choiceText, trainingEmphasis === value && styles.choiceTextActive]}>{label}</Text></Pressable>)}</View>
       </View>
       <Button title={saving ? 'Salvando…' : 'Salvar objetivo e ênfase'} onPress={save} disabled={saving} style={styles.saveButton} />

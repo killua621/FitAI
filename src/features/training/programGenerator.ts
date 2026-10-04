@@ -110,8 +110,13 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
   const beginner = profile.experience_level === 'Estou começando';
   const reps = goal === 'Melhorar condicionamento' ? '10–15' : '8–12';
   const requestedEmphasis = profile.training_emphasis || 'automatic';
-  // Automatic starts balanced: sex does not dictate which muscles someone wants to prioritize.
-  const emphasis = requestedEmphasis === 'automatic' ? 'balanced' : requestedEmphasis;
+  // This is a product default requested by ScholzFit, not a physiological rule; users can override it.
+  const automaticEmphasis = profile.energy_equation_profile === 'female'
+    ? 'lower_body'
+    : profile.energy_equation_profile === 'male'
+      ? 'upper_body'
+      : 'balanced';
+  const emphasis = requestedEmphasis === 'automatic' ? automaticEmphasis : requestedEmphasis;
   const lowerAccessories: ExerciseSeed[] = [
     { name: 'Cadeira extensora', focus: 'Quadríceps', priority: true },
     { name: 'Mesa flexora', focus: 'Posterior de coxa', priority: true },
