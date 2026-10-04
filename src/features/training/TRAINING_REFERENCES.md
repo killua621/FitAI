@@ -6,6 +6,7 @@ Revisado em 03/10/2026.
 
 - O modo automático do ScholzFit inicia com ênfase em membros inferiores para o perfil fisiológico feminino e em tronco e braços para o masculino, conforme a preferência de produto definida pelo responsável pelo app. Esse padrão não é apresentado como necessidade biológica: o usuário pode escolher corpo equilibrado ou outra ênfase no onboarding e no perfil.
 - O programa mantém exercícios para os principais grupos musculares, ajusta a distribuição ao número de sessões e à experiência declarada, usa progressão gradual e evita exigir falha muscular em todas as séries.
+- Quando a pessoa escolhe explicitamente “Mais pernas e glúteos”, o gerador agora cria sessões de inferiores dedicadas: 3 sessões em rotinas de 3, 4 ou 5 dias; 4 sessões em rotinas de 6 dias. Em rotinas de 2 dias, ambas são de corpo todo com foco adicional em inferiores. Exercícios de tronco continuam presentes para manter uma rotina abrangente. A escolha “Mais tronco e braços” usa uma distribuição espelhada, mantendo trabalho de pernas.
 - Cada exercício que o gerador pode incluir tem um vídeo demonstrativo associado. Os vídeos são incorporados do YouTube; o aplicativo não armazena os arquivos localmente.
 - A rotina é educativa. Dor, lesão, condição clínica, gestação ou idade abaixo de 18 anos exigem adaptação com profissional qualificado.
 

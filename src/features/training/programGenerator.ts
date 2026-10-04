@@ -104,6 +104,64 @@ const templatesByDays: Record<number, SessionSeed[]> = {
   ],
 };
 
+const lowerBodySessions: Record<number, SessionSeed[]> = {
+  3: [
+    { title: 'Treino A · Inferiores', focus: 'Quadríceps e glúteos', exercises: [squat(), hip(), { name: 'Cadeira extensora', focus: 'Quadríceps' }, { name: 'Cadeira abdutora', focus: 'Glúteos e abdutores' }, { name: 'Panturrilha em pé', focus: 'Panturrilhas' }, core()] },
+    { title: 'Treino B · Inferiores', focus: 'Posterior de coxa e glúteos, com manutenção de superiores', exercises: [hinge(), { name: 'Mesa flexora', focus: 'Posterior de coxa' }, { name: 'Ponte de glúteos', focus: 'Glúteos' }, pull(), push(), core('Prancha lateral')] },
+    { title: 'Treino C · Inferiores', focus: 'Unilateral, quadríceps e glúteo médio', exercises: [squat('Leg press'), squat('Agachamento búlgaro'), { name: 'Cadeira extensora', focus: 'Quadríceps' }, { name: 'Cadeira abdutora', focus: 'Glúteo médio e abdutores' }, { name: 'Coice na polia', focus: 'Glúteos' }, core('Prancha lateral')] },
+  ],
+  4: [
+    { title: 'Treino A · Inferiores', focus: 'Quadríceps e glúteos', exercises: [squat(), hip(), { name: 'Cadeira extensora', focus: 'Quadríceps' }, { name: 'Cadeira abdutora', focus: 'Glúteos e abdutores' }, { name: 'Panturrilha em pé', focus: 'Panturrilhas' }, core()] },
+    { title: 'Treino B · Superiores', focus: 'Peito, costas e braços', exercises: [push(), pull(), verticalPush(), verticalPull(), core('Prancha lateral')] },
+    { title: 'Treino C · Inferiores', focus: 'Posterior de coxa e glúteos', exercises: [hinge(), { name: 'Mesa flexora', focus: 'Posterior de coxa' }, { name: 'Ponte de glúteos', focus: 'Glúteos' }, { name: 'Coice na polia', focus: 'Glúteos' }, { name: 'Panturrilha em pé', focus: 'Panturrilhas' }, core('Prancha lateral')] },
+    { title: 'Treino D · Inferiores', focus: 'Unilateral e estabilidade', exercises: [squat('Leg press'), squat('Afundo apoiado'), { name: 'Cadeira extensora', focus: 'Quadríceps' }, { name: 'Cadeira abdutora', focus: 'Glúteos e abdutores' }, { name: 'Mesa flexora', focus: 'Posterior de coxa' }, core('Prancha lateral')] },
+  ],
+  5: [
+    { title: 'Treino A · Inferiores', focus: 'Quadríceps e glúteos', exercises: [squat(), hip(), { name: 'Cadeira extensora', focus: 'Quadríceps' }, { name: 'Cadeira abdutora', focus: 'Glúteos e abdutores' }, { name: 'Panturrilha em pé', focus: 'Panturrilhas' }, core()] },
+    { title: 'Treino B · Superiores', focus: 'Peito, costas e braços', exercises: [push(), pull(), verticalPush(), verticalPull(), core('Prancha lateral')] },
+    { title: 'Treino C · Inferiores', focus: 'Posterior de coxa e glúteos', exercises: [hinge(), { name: 'Mesa flexora', focus: 'Posterior de coxa' }, { name: 'Ponte de glúteos', focus: 'Glúteos' }, { name: 'Coice na polia', focus: 'Glúteos' }, { name: 'Panturrilha em pé', focus: 'Panturrilhas' }, core('Prancha lateral')] },
+    { title: 'Treino D · Superiores', focus: 'Ombros, peito e costas', exercises: [push('Supino inclinado com halteres'), pull('Remada baixa'), verticalPush('Elevação lateral'), verticalPull('Puxada com pegada neutra'), { name: 'Rosca com halteres', focus: 'Bíceps' }, core()] },
+    { title: 'Treino E · Inferiores', focus: 'Unilateral e estabilidade', exercises: [squat('Leg press'), squat('Agachamento búlgaro'), { name: 'Cadeira extensora', focus: 'Quadríceps' }, { name: 'Cadeira abdutora', focus: 'Glúteos e abdutores' }, { name: 'Mesa flexora', focus: 'Posterior de coxa' }, core('Prancha lateral')] },
+  ],
+  6: [
+    { title: 'Treino A · Inferiores', focus: 'Quadríceps e glúteos', exercises: [squat(), hip(), { name: 'Cadeira extensora', focus: 'Quadríceps' }, { name: 'Cadeira abdutora', focus: 'Glúteos e abdutores' }, { name: 'Panturrilha em pé', focus: 'Panturrilhas' }, core()] },
+    { title: 'Treino B · Superiores', focus: 'Peito, costas e braços', exercises: [push(), pull(), verticalPush(), verticalPull(), core('Prancha lateral')] },
+    { title: 'Treino C · Inferiores', focus: 'Posterior de coxa e glúteos', exercises: [hinge(), { name: 'Mesa flexora', focus: 'Posterior de coxa' }, { name: 'Ponte de glúteos', focus: 'Glúteos' }, { name: 'Coice na polia', focus: 'Glúteos' }, { name: 'Panturrilha em pé', focus: 'Panturrilhas' }, core('Prancha lateral')] },
+    { title: 'Treino D · Superiores', focus: 'Ombros, peito e costas', exercises: [push('Supino inclinado com halteres'), pull('Remada baixa'), verticalPush('Elevação lateral'), verticalPull('Puxada com pegada neutra'), { name: 'Rosca com halteres', focus: 'Bíceps' }, core()] },
+    { title: 'Treino E · Inferiores', focus: 'Unilateral e estabilidade', exercises: [squat('Leg press'), squat('Agachamento búlgaro'), { name: 'Cadeira extensora', focus: 'Quadríceps' }, { name: 'Cadeira abdutora', focus: 'Glúteos e abdutores' }, { name: 'Mesa flexora', focus: 'Posterior de coxa' }, core('Prancha lateral')] },
+    { title: 'Treino F · Inferiores', focus: 'Posterior, glúteos e panturrilhas', exercises: [squat('Afundo apoiado'), hinge('Levantamento romeno leve'), hip('Ponte de glúteos'), { name: 'Mesa flexora', focus: 'Posterior de coxa' }, { name: 'Panturrilha em pé', focus: 'Panturrilhas' }, core('Prancha lateral')] },
+  ],
+};
+
+const upperBodySessions: Record<number, SessionSeed[]> = {
+  3: [
+    { title: 'Treino A · Superiores', focus: 'Peito, costas e braços', exercises: [push(), pull(), verticalPush(), verticalPull(), { name: 'Rosca com halteres', focus: 'Bíceps' }, core()] },
+    { title: 'Treino B · Inferiores', focus: 'Pernas e estabilidade', exercises: [squat(), hinge(), hip(), { name: 'Mesa flexora', focus: 'Posterior de coxa' }, core('Prancha lateral')] },
+    { title: 'Treino C · Superiores', focus: 'Costas, ombros e braços', exercises: [push('Supino inclinado com halteres'), pull('Remada baixa'), verticalPull('Puxada com pegada neutra'), verticalPush('Elevação lateral'), { name: 'Tríceps na polia', focus: 'Tríceps' }, core()] },
+  ],
+  4: [
+    { title: 'Treino A · Superiores', focus: 'Peito, costas e braços', exercises: [push(), pull(), verticalPush(), verticalPull(), { name: 'Rosca com halteres', focus: 'Bíceps' }, core()] },
+    { title: 'Treino B · Inferiores', focus: 'Pernas e estabilidade', exercises: [squat(), hinge(), hip(), { name: 'Mesa flexora', focus: 'Posterior de coxa' }, core('Prancha lateral')] },
+    { title: 'Treino C · Superiores', focus: 'Costas, ombros e braços', exercises: [push('Supino inclinado com halteres'), pull('Remada baixa'), verticalPull('Puxada com pegada neutra'), verticalPush('Elevação lateral'), { name: 'Tríceps na polia', focus: 'Tríceps' }, core()] },
+    { title: 'Treino D · Superiores', focus: 'Peito, ombros e braços', exercises: [push('Supino máquina'), { name: 'Crucifixo na máquina', focus: 'Peito' }, verticalPush('Desenvolvimento com halteres'), { name: 'Crucifixo inverso na máquina', focus: 'Parte posterior dos ombros' }, { name: 'Rosca martelo', focus: 'Bíceps e antebraço' }, core('Prancha lateral')] },
+  ],
+  5: [
+    { title: 'Treino A · Superiores', focus: 'Peito, costas e braços', exercises: [push(), pull(), verticalPush(), verticalPull(), { name: 'Rosca com halteres', focus: 'Bíceps' }, core()] },
+    { title: 'Treino B · Inferiores', focus: 'Pernas e estabilidade', exercises: [squat(), hinge(), hip(), { name: 'Mesa flexora', focus: 'Posterior de coxa' }, core('Prancha lateral')] },
+    { title: 'Treino C · Superiores', focus: 'Costas, ombros e braços', exercises: [push('Supino inclinado com halteres'), pull('Remada baixa'), verticalPull('Puxada com pegada neutra'), verticalPush('Elevação lateral'), { name: 'Tríceps na polia', focus: 'Tríceps' }, core()] },
+    { title: 'Treino D · Inferiores', focus: 'Quadríceps e posterior', exercises: [squat('Leg press'), hinge('Levantamento romeno leve'), { name: 'Cadeira extensora', focus: 'Quadríceps' }, { name: 'Mesa flexora', focus: 'Posterior de coxa' }, hip('Ponte de glúteos'), core('Prancha lateral')] },
+    { title: 'Treino E · Superiores', focus: 'Peito, ombros e braços', exercises: [push('Supino máquina'), { name: 'Crucifixo na máquina', focus: 'Peito' }, verticalPush('Desenvolvimento com halteres'), { name: 'Crucifixo inverso na máquina', focus: 'Parte posterior dos ombros' }, { name: 'Rosca martelo', focus: 'Bíceps e antebraço' }, core()] },
+  ],
+  6: [
+    { title: 'Treino A · Superiores', focus: 'Peito, costas e braços', exercises: [push(), pull(), verticalPush(), verticalPull(), { name: 'Rosca com halteres', focus: 'Bíceps' }, core()] },
+    { title: 'Treino B · Inferiores', focus: 'Pernas e estabilidade', exercises: [squat(), hinge(), hip(), { name: 'Mesa flexora', focus: 'Posterior de coxa' }, core('Prancha lateral')] },
+    { title: 'Treino C · Superiores', focus: 'Costas, ombros e braços', exercises: [push('Supino inclinado com halteres'), pull('Remada baixa'), verticalPull('Puxada com pegada neutra'), verticalPush('Elevação lateral'), { name: 'Tríceps na polia', focus: 'Tríceps' }, core()] },
+    { title: 'Treino D · Inferiores', focus: 'Quadríceps e posterior', exercises: [squat('Leg press'), hinge('Levantamento romeno leve'), { name: 'Cadeira extensora', focus: 'Quadríceps' }, { name: 'Mesa flexora', focus: 'Posterior de coxa' }, hip('Ponte de glúteos'), core('Prancha lateral')] },
+    { title: 'Treino E · Superiores', focus: 'Peito, ombros e braços', exercises: [push('Supino máquina'), { name: 'Crucifixo na máquina', focus: 'Peito' }, verticalPush('Desenvolvimento com halteres'), { name: 'Crucifixo inverso na máquina', focus: 'Parte posterior dos ombros' }, { name: 'Rosca martelo', focus: 'Bíceps e antebraço' }, core()] },
+    { title: 'Treino F · Superiores', focus: 'Costas e braços', exercises: [verticalPull('Puxada neutra'), pull('Remada baixa com pegada fechada'), { name: 'Pullover na polia', focus: 'Costas' }, { name: 'Rosca alternada', focus: 'Bíceps' }, { name: 'Tríceps na polia', focus: 'Tríceps' }, core('Prancha lateral')] },
+  ],
+};
+
 export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram {
   const days = Math.max(2, Math.min(6, profile.training_days || 3));
   const goal = profile.goal || 'Ganhar massa muscular';
@@ -117,33 +175,22 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
       ? 'upper_body'
       : 'balanced';
   const emphasis = requestedEmphasis === 'automatic' ? automaticEmphasis : requestedEmphasis;
-  const lowerAccessories: ExerciseSeed[] = [
-    { name: 'Cadeira extensora', focus: 'Quadríceps', priority: true },
-    { name: 'Mesa flexora', focus: 'Posterior de coxa', priority: true },
-    { name: 'Cadeira abdutora', focus: 'Glúteos e abdutores', priority: true },
-    { name: 'Panturrilha em pé', focus: 'Panturrilhas', priority: true },
-    { name: 'Coice na polia', focus: 'Glúteos', priority: true },
-    { name: 'Passada apoiada', focus: 'Quadríceps e glúteos', priority: true },
-  ];
-  const upperAccessories: ExerciseSeed[] = [
-    { name: 'Elevação lateral', focus: 'Ombros', priority: true },
-    { name: 'Tríceps na polia', focus: 'Tríceps', priority: true },
-    { name: 'Rosca alternada', focus: 'Bíceps', priority: true },
-    { name: 'Crucifixo inverso na máquina', focus: 'Costas e ombros', priority: true },
-    { name: 'Crucifixo na máquina', focus: 'Peito', priority: true },
-    { name: 'Rosca martelo', focus: 'Bíceps e antebraço', priority: true },
-  ];
-  const templates = templatesByDays[days];
+  const templates = days >= 3 && emphasis === 'lower_body'
+    ? lowerBodySessions[days]
+    : days >= 3 && emphasis === 'upper_body'
+      ? upperBodySessions[days]
+      : templatesByDays[days];
   const sessions = templates.map((session, index) => {
-    const exercises = [...session.exercises];
-    if (emphasis === 'lower_body') exercises.push(lowerAccessories[index % lowerAccessories.length]);
-    if (emphasis === 'upper_body') exercises.push(upperAccessories[index % upperAccessories.length]);
-    const sessionExercises = uniqueExercises(exercises);
-    const emphasisLabel = emphasis === 'lower_body' ? ' · prioridade em inferiores' : emphasis === 'upper_body' ? ' · prioridade em superiores' : '';
+    const twoDayFocusExercise = days === 2 && emphasis === 'lower_body'
+      ? (index === 0 ? { name: 'Cadeira extensora', focus: 'Quadríceps' } : { name: 'Cadeira abdutora', focus: 'Glúteos e abdutores' })
+      : days === 2 && emphasis === 'upper_body'
+        ? (index === 0 ? { name: 'Elevação lateral', focus: 'Ombros' } : { name: 'Rosca alternada', focus: 'Bíceps' })
+        : undefined;
+    const sessionExercises = uniqueExercises(twoDayFocusExercise ? [...session.exercises, twoDayFocusExercise] : session.exercises);
     return {
     id: `workout-${index + 1}`,
     title: session.title,
-    focus: `${session.focus}${emphasisLabel}`,
+    focus: session.focus,
     duration: sessionExercises.length >= 6 ? 55 : sessionExercises.length >= 5 ? 45 : 40,
     exercises: sessionExercises.map((exercise) => ({
       ...exercise,
@@ -165,9 +212,15 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
       ? 'Força + condicionamento'
       : 'Plano de força progressiva';
   const subtitle = emphasis === 'lower_body'
-    ? 'Mais séries para membros inferiores, mantendo o corpo todo no plano.'
+    ? days >= 6
+      ? 'Quatro sessões de inferiores na semana, com superiores também no plano.'
+      : days >= 3
+        ? 'Três sessões de inferiores na semana, com superiores também no plano.'
+        : 'Duas sessões de corpo todo com foco adicional em pernas e glúteos.'
     : emphasis === 'upper_body'
-      ? 'Mais séries para tronco e braços, com pernas também presentes na rotina.'
+      ? days >= 4
+        ? `${days === 6 ? 4 : 3} sessões de superiores na semana, com pernas também no plano.`
+        : 'Duas sessões com foco em superiores, mantendo pernas no plano.'
       : goal === 'Ganhar massa muscular'
     ? 'Foco em hipertrofia, técnica estável e progressão gradual.'
     : goal === 'Perder gordura'
@@ -180,7 +233,7 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
     title,
     subtitle,
     sessions,
-    method: `Comece com 3 séries por exercício; nos acessórios da ênfase escolhida, use 4 séries se já treina com experiência. Faça ${reps} repetições com controle e pare ainda conseguindo cerca de 2 repetições bem feitas. Quando atingir o topo da faixa com técnica estável, aumente a carga gradualmente. Descanse 90–120 s nos movimentos principais.`,
+    method: `Comece com 3 séries por exercício. Se já treina há algum tempo e mantém boa técnica, os movimentos principais podem ter 4 séries. Faça ${reps} repetições controladas, sem precisar chegar à falha em todas as séries. Ao atingir o topo da faixa com técnica estável, aumente a carga aos poucos. Descanse 90–120 s nos movimentos principais.`,
     cardio: profile.age && profile.age < 18
       ? 'Menores de 18 anos precisam de atividades e progressão adequadas à idade, com supervisão. Este plano foi pensado como referência para adultos.'
       : 'Para adultos, a OMS recomenda acumular 150–300 min de atividade moderada (ou 75–150 min vigorosa) por semana e fortalecer os principais grupos musculares em 2 ou mais dias. Comece de onde está; ganhar massa não exige zerar o cardio.',
