@@ -7,10 +7,29 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "experiments": { "typedRoutes": true },
-    "plugins": ["expo-router"],
-    "ios": { "supportsTablet": true },
-    "android": { "edgeToEdgeEnabled": true },
-    "web": { "bundler": "metro", "output": "static" }
+    "experiments": {
+      "typedRoutes": true
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "edgeToEdgeEnabled": true,
+      "package": "com.scholzfit.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "monochromeImage": "./assets/images/monochrome-icon.png",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#100D13"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "icon": "./assets/images/icon.png"
   }
 }

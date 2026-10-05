@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View, Linking, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { Brand } from '@/components/Brand';
@@ -32,7 +32,7 @@ export default function AuthScreen() {
     { label: 'símbolo', valid: [...password].some((character) => PASSWORD_SYMBOLS.includes(character)) },
   ];
   const isStrongPassword = passwordChecks.every((check) => check.valid);
-  const authRedirect = 'https://fitai-4unn.onrender.com/auth';
+  const authRedirect = Platform.OS === 'web' ? 'https://fitai-4unn.onrender.com/auth' : Linking.createURL('auth');
 
   const describeAuthError = (error: unknown) => {
     const authError = error as { code?: string; status?: number; message?: string };
