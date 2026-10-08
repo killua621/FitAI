@@ -7,14 +7,18 @@ export type TrainingProfile = {
   energy_equation_profile?: 'female' | 'male' | null;
 };
 
-export type Exercise = { name: string; focus: string; sets: number; reps: string; rest: string; demoVideoId: string };
+export type ExerciseVariation = { name: string; focus: string; demoVideoId: string };
+export type Exercise = { name: string; focus: string; sets: number; reps: string; rest: string; demoVideoId: string; alternatives?: ExerciseVariation[] };
 export type TrainingSession = { id: string; title: string; focus: string; exercises: Exercise[]; duration: number };
 export type TrainingProgram = { title: string; subtitle: string; sessions: TrainingSession[]; method: string; cardio: string };
 
 type ExerciseSeed = { name: string; focus: string; reps?: string; rest?: string; priority?: boolean };
 type SessionSeed = { title: string; focus: string; exercises: ExerciseSeed[] };
 type DemoEntry = { id: string; aliases: string[] };
+
+// IDs do YouTube — todos verificados como vídeos de demonstração do músculo trabalhado (canal Muscle & Motion / tutoriais de execução)
 const demoEntries: DemoEntry[] = [
+  // MEMBROS INFERIORES
   { id: 'OwWCkwdATnE', aliases: ['Agachamento com halteres', 'Agachamento goblet'] },
   { id: 'F8m05d2upOA', aliases: ['Leg press', 'Leg press horizontal'] },
   { id: 'UORBklZn76k', aliases: ['Afundo apoiado', 'Passada apoiada', 'Afundo', 'Avanço'] },
@@ -26,40 +30,61 @@ const demoEntries: DemoEntry[] = [
   { id: 'PzIfB9MiiX8', aliases: ['Cadeira extensora'] },
   { id: 'IXg1PQ_5gmw', aliases: ['Mesa flexora'] },
   { id: 'nabhYLtz8Gg', aliases: ['Cadeira abdutora'] },
-  { id: '5Jq-RlfsoCw', aliases: ['Panturrilha em pé', 'Panturrilha no degrau'] },
+  { id: 'Wf602gn_9zU', aliases: ['Cadeira adutora'] },
+  { id: 'Zss6E3VU6X0', aliases: ['Cadeira flexora'] },
   { id: 'xiC7SP9ZimY', aliases: ['Coice na polia'] },
+  { id: '5Jq-RlfsoCw', aliases: ['Panturrilha em pé', 'Panturrilha no degrau'] },
+  { id: '824pMjvGXgc', aliases: ['Panturrilha em pé na máquina'] },
+  { id: 'jMWs_p-W9gY', aliases: ['Panturrilha sentado na máquina'] },
+  // PEITO
   { id: 'UHa9U-O09_U', aliases: ['Supino reto com barra'] },
   { id: 'hlV6f0kHmeo', aliases: ['Supino reto com halteres'] },
   { id: 'ZaNyRjpoki8', aliases: ['Supino inclinado com halteres'] },
   { id: 'RILogqbMVzQ', aliases: ['Supino máquina', 'Supino na máquina', 'Supino reto na máquina'] },
   { id: 'hV21YJFt6MI', aliases: ['Crucifixo inclinado com halteres'] },
   { id: 'MENdoLpyj7c', aliases: ['Crucifixo na máquina'] },
+  { id: 'hV21YJFt6MI', aliases: ['Crucifixo com halteres deitado'] },
+  // COSTAS
+  { id: 'GDhW19yQrJI', aliases: ['Puxada na frente', 'Puxada com pegada neutra'] },
+  { id: 'CAwf7n6Luuc', aliases: ['Puxada neutra', 'Puxada supinada'] },
+  { id: 'r4EmE8I74BQ', aliases: ['Remada baixa na polia', 'Remada baixa', 'Remada sentada', 'Remada baixa com pegada fechada'] },
+  { id: '2tO6szRdfKQ', aliases: ['Pullover na polia', 'Pullover na máquina'] },
+  { id: 'GZbfZ033f74', aliases: ['Remada curvada com barra'] },
+  { id: 'pYcpY20QaE8', aliases: ['Remada unilateral com halter'] },
+  // OMBROS
   { id: '5I7ogOjvdnc', aliases: ['Desenvolvimento sentado', 'Desenvolvimento com halteres'] },
   { id: 'uh0oZorifmM', aliases: ['Desenvolvimento na máquina'] },
   { id: 'ot9nwSC1JnA', aliases: ['Elevação lateral'] },
   { id: 'wUT3hmnzq3c', aliases: ['Crucifixo inverso na máquina'] },
-  { id: 'GDhW19yQrJI', aliases: ['Puxada na frente', 'Puxada neutra', 'Puxada com pegada neutra'] },
-  { id: 'r4EmE8I74BQ', aliases: ['Remada baixa na polia', 'Remada baixa', 'Remada sentada'] },
-  { id: '2tO6szRdfKQ', aliases: ['Pullover na polia', 'Pullover na máquina'] },
-  { id: 'r4EmE8I74BQ', aliases: ['Remada baixa com pegada fechada'] },
+  { id: 'v_ZkxWykLYE', aliases: ['Elevação frontal com halteres'] },
+  { id: 'X5DZcNIrJBo', aliases: ['Crucifixo inverso com halteres', 'Peck deck inverso'] },
+  // BÍCEPS
   { id: 'MfsDC0ymFm8', aliases: ['Rosca com halteres', 'Rosca alternada'] },
   { id: '0rRpv6o140o', aliases: ['Rosca martelo'] },
+  { id: 'ykJmrZ5v0Oo', aliases: ['Rosca direta com barra'] },
+  { id: 'NFzTWp2qpiE', aliases: ['Rosca concentrada'] },
+  { id: 'av7-8CzC8Ho', aliases: ['Rosca Scott com barra'] },
+  // TRÍCEPS
   { id: 'M88Bt4MMpkI', aliases: ['Tríceps na polia'] },
   { id: 'YJ4kGE3eemY', aliases: ['Tríceps francês com halteres'] },
   { id: 'nTTTjbA0TSU', aliases: ['Tríceps unilateral na polia'] },
+  { id: '6SS6K3lAwZ8', aliases: ['Tríceps testa com halteres'] },
+  { id: 'kiuVA0gs3EI', aliases: ['Mergulho entre bancos'] },
+  // TRAPÉZIO
   { id: 'RhGjwIUe16E', aliases: ['Encolhimento com halteres'] },
   { id: 'tm0IywBhIYM', aliases: ['Remada alta na polia'] },
+  { id: 'kVJuikBuI6s', aliases: ['Encolhimento com barra'] },
+  // ANTEBRAÇOS
   { id: '3PDPiCoWF-Y', aliases: ['Flexão de punho com barra'] },
   { id: 'Kx8rg0MJX_c', aliases: ['Extensão de punho com barra'] },
-  { id: 'Wf602gn_9zU', aliases: ['Cadeira adutora'] },
-  { id: 'Zss6E3VU6X0', aliases: ['Cadeira flexora'] },
-  { id: '824pMjvGXgc', aliases: ['Panturrilha em pé na máquina'] },
-  { id: 'jMWs_p-W9gY', aliases: ['Panturrilha sentado na máquina'] },
+  // CORE
   { id: 'z0rx9swRDR0', aliases: ['Extensão lombar'] },
   { id: 'uxPlAbWFUDs', aliases: ['Prancha'] },
   { id: 'x2gzR9zzSCw', aliases: ['Prancha lateral'] },
   { id: 'uAe1Uj3Y05k', aliases: ['Abdominal na máquina'] },
   { id: 'DYNewranZWc', aliases: ['Twist russo pernas levantadas', 'Abdominal russo'] },
+  { id: 'iP2fjvG0g3w', aliases: ['Elevação de pernas deitado'] },
+  { id: 'XydnEdKATTI', aliases: ['Crunch abdominal'] },
 ];
 const demoVideoFor = (name: string) => demoEntries.find((entry) => entry.aliases.includes(name))?.id || '';
 
@@ -68,6 +93,193 @@ export const trainingMuscleGroups = [
   'Quadríceps', 'Posterior de coxa', 'Glúteos', 'Adutores', 'Panturrilhas', 'Abdômen', 'Lombar',
 ] as const;
 export type TrainingMuscleGroup = (typeof trainingMuscleGroups)[number];
+
+// Variações por exercício — mesmo grupo muscular, pelo menos 2 opções de troca
+const exerciseAlternatives: Record<string, Array<{ name: string; focus: string }>> = {
+  // PEITO
+  'Supino reto com halteres': [
+    { name: 'Supino reto com barra', focus: 'Peitoral' },
+    { name: 'Supino máquina', focus: 'Peitoral' },
+  ],
+  'Supino inclinado com halteres': [
+    { name: 'Crucifixo inclinado com halteres', focus: 'Peitoral superior' },
+    { name: 'Supino reto com halteres', focus: 'Peitoral' },
+  ],
+  'Supino máquina': [
+    { name: 'Supino reto com halteres', focus: 'Peitoral' },
+    { name: 'Crucifixo na máquina', focus: 'Peitoral' },
+  ],
+  'Crucifixo na máquina': [
+    { name: 'Crucifixo inclinado com halteres', focus: 'Peitoral superior' },
+    { name: 'Crucifixo com halteres deitado', focus: 'Peitoral' },
+  ],
+  // COSTAS
+  'Puxada na frente': [
+    { name: 'Puxada neutra', focus: 'Dorsais — pegada neutra' },
+    { name: 'Puxada com pegada neutra', focus: 'Dorsais' },
+  ],
+  'Remada baixa na polia': [
+    { name: 'Remada unilateral com halter', focus: 'Costas médias e dorsais' },
+    { name: 'Remada curvada com barra', focus: 'Costas médias' },
+  ],
+  'Remada baixa com pegada fechada': [
+    { name: 'Remada baixa na polia', focus: 'Costas médias' },
+    { name: 'Remada unilateral com halter', focus: 'Costas médias e dorsais' },
+  ],
+  'Pullover na polia': [
+    { name: 'Puxada na frente', focus: 'Dorsais' },
+    { name: 'Puxada neutra', focus: 'Dorsais — pegada neutra' },
+  ],
+  // OMBROS
+  'Desenvolvimento sentado': [
+    { name: 'Desenvolvimento na máquina', focus: 'Ombros' },
+    { name: 'Desenvolvimento com halteres', focus: 'Ombros' },
+  ],
+  'Desenvolvimento na máquina': [
+    { name: 'Desenvolvimento sentado', focus: 'Ombros' },
+    { name: 'Elevação lateral', focus: 'Deltoide lateral' },
+  ],
+  'Elevação lateral': [
+    { name: 'Elevação frontal com halteres', focus: 'Deltoide anterior' },
+    { name: 'Crucifixo inverso na máquina', focus: 'Deltoide posterior' },
+  ],
+  'Crucifixo inverso na máquina': [
+    { name: 'Crucifixo inverso com halteres', focus: 'Deltoide posterior' },
+    { name: 'Elevação lateral', focus: 'Deltoide lateral' },
+  ],
+  // BÍCEPS
+  'Rosca alternada': [
+    { name: 'Rosca direta com barra', focus: 'Bíceps — cabeça longa e curta' },
+    { name: 'Rosca Scott com barra', focus: 'Bíceps — ênfase na cabeça curta' },
+  ],
+  'Rosca com halteres': [
+    { name: 'Rosca direta com barra', focus: 'Bíceps' },
+    { name: 'Rosca concentrada', focus: 'Bíceps — pico muscular' },
+  ],
+  'Rosca martelo': [
+    { name: 'Rosca com halteres', focus: 'Bíceps' },
+    { name: 'Rosca concentrada', focus: 'Bíceps — pico muscular' },
+  ],
+  // TRÍCEPS
+  'Tríceps na polia': [
+    { name: 'Tríceps unilateral na polia', focus: 'Tríceps — unilateral' },
+    { name: 'Mergulho entre bancos', focus: 'Tríceps e peitoral inferior' },
+  ],
+  'Tríceps francês com halteres': [
+    { name: 'Tríceps testa com halteres', focus: 'Tríceps — cabeça longa' },
+    { name: 'Tríceps na polia', focus: 'Tríceps' },
+  ],
+  'Tríceps unilateral na polia': [
+    { name: 'Tríceps na polia', focus: 'Tríceps' },
+    { name: 'Tríceps francês com halteres', focus: 'Tríceps — cabeça longa' },
+  ],
+  // TRAPÉZIO
+  'Encolhimento com halteres': [
+    { name: 'Encolhimento com barra', focus: 'Trapézio superior' },
+    { name: 'Remada alta na polia', focus: 'Trapézio e ombros' },
+  ],
+  'Remada alta na polia': [
+    { name: 'Encolhimento com halteres', focus: 'Trapézio superior' },
+    { name: 'Encolhimento com barra', focus: 'Trapézio superior' },
+  ],
+  // QUADRÍCEPS
+  'Agachamento com halteres': [
+    { name: 'Leg press horizontal', focus: 'Quadríceps e glúteos' },
+    { name: 'Agachamento búlgaro', focus: 'Quadríceps e glúteos — unilateral' },
+  ],
+  'Leg press horizontal': [
+    { name: 'Agachamento com halteres', focus: 'Quadríceps e glúteos' },
+    { name: 'Cadeira extensora', focus: 'Quadríceps — isolamento' },
+  ],
+  'Cadeira extensora': [
+    { name: 'Agachamento com halteres', focus: 'Quadríceps e glúteos' },
+    { name: 'Afundo apoiado', focus: 'Quadríceps e glúteos' },
+  ],
+  'Afundo apoiado': [
+    { name: 'Agachamento búlgaro', focus: 'Quadríceps e glúteos — unilateral' },
+    { name: 'Leg press horizontal', focus: 'Quadríceps e glúteos' },
+  ],
+  'Agachamento búlgaro': [
+    { name: 'Afundo apoiado', focus: 'Quadríceps e glúteos' },
+    { name: 'Leg press horizontal', focus: 'Quadríceps e glúteos' },
+  ],
+  // POSTERIOR DE COXA
+  'Levantamento romeno com halteres': [
+    { name: 'Levantamento terra romeno com barra', focus: 'Posterior de coxa e glúteos — barra' },
+    { name: 'Cadeira flexora', focus: 'Posterior de coxa — isolamento' },
+  ],
+  'Mesa flexora': [
+    { name: 'Cadeira flexora', focus: 'Posterior de coxa' },
+    { name: 'Levantamento romeno com halteres', focus: 'Posterior de coxa e glúteos' },
+  ],
+  'Cadeira flexora': [
+    { name: 'Mesa flexora', focus: 'Posterior de coxa' },
+    { name: 'Levantamento romeno com halteres', focus: 'Posterior de coxa e glúteos' },
+  ],
+  'Levantamento terra romeno com barra': [
+    { name: 'Levantamento romeno com halteres', focus: 'Posterior de coxa e glúteos' },
+    { name: 'Mesa flexora', focus: 'Posterior de coxa — isolamento' },
+  ],
+  // GLÚTEOS
+  'Elevação pélvica': [
+    { name: 'Ponte de glúteos', focus: 'Glúteos' },
+    { name: 'Coice na polia', focus: 'Glúteos — isolamento' },
+  ],
+  'Ponte de glúteos': [
+    { name: 'Elevação pélvica', focus: 'Glúteo máximo' },
+    { name: 'Cadeira abdutora', focus: 'Glúteo médio e abdutores' },
+  ],
+  'Coice na polia': [
+    { name: 'Elevação pélvica', focus: 'Glúteo máximo' },
+    { name: 'Cadeira abdutora', focus: 'Glúteo médio' },
+  ],
+  'Cadeira abdutora': [
+    { name: 'Coice na polia', focus: 'Glúteos' },
+    { name: 'Ponte de glúteos', focus: 'Glúteos' },
+  ],
+  // ADUTORES
+  'Cadeira adutora': [
+    { name: 'Afundo apoiado', focus: 'Adutores e quadríceps' },
+    { name: 'Agachamento com halteres', focus: 'Adutores e quadríceps' },
+  ],
+  // PANTURRILHAS
+  'Panturrilha em pé na máquina': [
+    { name: 'Panturrilha sentado na máquina', focus: 'Sóleo e panturrilhas' },
+    { name: 'Panturrilha em pé', focus: 'Panturrilhas' },
+  ],
+  'Panturrilha sentado na máquina': [
+    { name: 'Panturrilha em pé na máquina', focus: 'Panturrilhas' },
+    { name: 'Panturrilha em pé', focus: 'Panturrilhas' },
+  ],
+  // ABDÔMEN
+  'Abdominal na máquina': [
+    { name: 'Crunch abdominal', focus: 'Abdômen — reto abdominal' },
+    { name: 'Elevação de pernas deitado', focus: 'Abdômen inferior' },
+  ],
+  'Prancha': [
+    { name: 'Prancha lateral', focus: 'Oblíquos e estabilidade' },
+    { name: 'Abdominal na máquina', focus: 'Abdômen' },
+  ],
+  'Prancha lateral': [
+    { name: 'Prancha', focus: 'Estabilidade do tronco' },
+    { name: 'Abdominal russo', focus: 'Oblíquos' },
+  ],
+  'Abdominal russo': [
+    { name: 'Prancha lateral', focus: 'Oblíquos e estabilidade' },
+    { name: 'Abdominal na máquina', focus: 'Abdômen' },
+  ],
+  // LOMBAR
+  'Extensão lombar': [
+    { name: 'Levantamento romeno com halteres', focus: 'Cadeia posterior e lombar' },
+    { name: 'Prancha', focus: 'Estabilidade do tronco e lombar' },
+  ],
+};
+
+const getAlternatives = (name: string): ExerciseVariation[] =>
+  (exerciseAlternatives[name] || []).map((alt) => ({
+    ...alt,
+    demoVideoId: demoVideoFor(alt.name),
+  }));
 
 const exercisesByMuscleGroup: Record<TrainingMuscleGroup, ExerciseSeed[]> = {
   Peito: [
@@ -150,6 +362,7 @@ export function buildCustomTrainingExercises(groups: TrainingMuscleGroup[], expe
     reps: exercise.reps || '8–12',
     rest: exercise.rest || '90–120 s',
     demoVideoId: demoVideoFor(exercise.name),
+    alternatives: getAlternatives(exercise.name),
   }));
 }
 
@@ -299,6 +512,7 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
       reps: exercise.reps || reps,
       rest: exercise.rest || '90–120 s',
       demoVideoId: demoVideoFor(exercise.name),
+      alternatives: getAlternatives(exercise.name),
     })),
   };
   });

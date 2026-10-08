@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ExerciseDemo } from '@/features/training/ExerciseDemo';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { buildCustomTrainingExercises, trainingMuscleGroups, type TrainingMuscleGroup } from '@/features/training/programGenerator';
@@ -12,13 +12,14 @@ function normalizeGroupList(value: string | null | undefined): TrainingMuscleGro
 }
 
 export function TrainingWeekBuilder() {
-  const { profile, workoutCheckinDetails, trainingWeekPlans, refreshTrainingWeekPlans, saveTrainingWeekPlan, addWorkoutCheckin } = useAuth();
+  const { profile, workoutCheckinDetails, trainingWeekPlans, refreshTrainingWeekPlans, saveTrainingWeekPlan } = useAuth();
   const [selectedWeekday, setSelectedWeekday] = useState((new Date().getDay() + 6) % 7);
   const [weekKey, setWeekKey] = useState(getCurrentWeekStartKey());
   const [selectedGroups, setSelectedGroups] = useState<TrainingMuscleGroup[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [savingPlan, setSavingPlan] = useState(false);
-  const [savingCheckin, setSavingCheckin] = useState(false);
+  const [selectedVariations, setSelectedVariations] = useState<Record<number, import('@/features/training/programGenerator').ExerciseVariation>>({});
+  const [openVariations, setOpenVariations] = useState<number | null>(null);
   const [activeDemo, setActiveDemo] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   const week = getCurrentWeekCheckins(workoutCheckinDetails.map((entry) => entry.checkin_date));
@@ -57,6 +58,8 @@ export function TrainingWeekBuilder() {
     const fromCheckin = normalizeGroupList(savedCheckin?.workout_focus);
     setSelectedGroups((fromPlan.length ? fromPlan : fromCheckin) as TrainingMuscleGroup[]);
     setActiveDemo(null);
+    setSelectedVariations({});
+    setOpenVariations(null);
   }, [weekKey, selectedWeekday, selectedPlan?.muscle_groups, savedCheckin?.workout_focus]);
 
   const toggleGroup = (group: TrainingMuscleGroup) => {
@@ -86,26 +89,6 @@ export function TrainingWeekBuilder() {
     } finally { setSavingPlan(false); }
   };
 
-  const registerWorkout = async () => {
-    if (selectedGroups.length === 0) {
-      setNotice('Escolha os grupos que treinou antes de registrar o check-in.');
-      return;
-    }
-    if (isFutureDay) {
-      setNotice('Você pode montar o treino com antecedência; o check-in fica disponível no dia escolhido.');
-      return;
-    }
-    setSavingCheckin(true);
-    setNotice('');
-    try {
-      const groups = selectedGroups.join(' + ');
-      const added = await addWorkoutCheckin(`Treino · ${groups}`, 'Musculação', groups, selectedDay.key);
-      setNotice(added ? `${weekdayTabLabels[selectedWeekday]} registrado. Seu progresso foi atualizado!` : 'Este dia já tem um check-in registrado.');
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : 'Não foi possível registrar o treino.');
-    } finally { setSavingCheckin(false); }
-  };
-
   const selectedDateLabel = new Date(`${selectedDay.key}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
 
   return (
@@ -132,19 +115,18 @@ export function TrainingWeekBuilder() {
         return <Pressable key={group} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} onPress={() => toggleGroup(group)} style={[styles.groupPill, selected && styles.groupPillSelected]}><Text style={[styles.groupText, selected && styles.groupTextSelected]}>{selected ? '✓  ' : '+  '}{group}</Text></Pressable>;
       })}</View>}
 
-      <View style={styles.actionRow}>
-        <Pressable accessibilityRole="button" disabled={savingPlan || loadingPlans} onPress={() => void savePlan()} style={[styles.savePlanButton, (savingPlan || loadingPlans) && styles.disabled]}><Text style={styles.savePlanText}>{savingPlan ? 'Salvando…' : 'Salvar dia'}</Text></Pressable>
-        <Pressable accessibilityRole="button" disabled={savingCheckin || completedToday || isFutureDay || loadingPlans} onPress={() => void registerWorkout()} style={[styles.checkinButton, (savingCheckin || completedToday || isFutureDay || loadingPlans) && styles.disabled]}><Text style={styles.checkinText}>{savingCheckin ? 'Registrando…' : completedToday ? 'Treino registrado ✓' : isFutureDay ? 'Check-in no dia do treino' : 'Marcar check-in'}</Text></Pressable>
-      </View>
+      <View style={styles.actionRow}><Pressable accessibilityRole="button" disabled={savingPlan || loadingPlans} onPress={() => void savePlan()} style={[styles.savePlanButton, styles.savePlanFull, (savingPlan || loadingPlans) && styles.disabled]}><Text style={styles.savePlanText}>{savingPlan ? 'Salvando…' : 'Salvar divisão do dia'}</Text></Pressable></View>
       {notice ? <Text accessibilityLiveRegion="polite" style={styles.notice}>{notice}</Text> : null}
 
       {exercises.length > 0 ? <View style={styles.routine}>
         <View style={styles.routineHeading}><View><Text style={styles.eyebrow}>SÉRIE SUGERIDA</Text><Text style={styles.routineTitle}>{selectedGroups.join(' + ')}</Text></View><Text style={styles.exerciseCount}>{exercises.length} exercícios</Text></View>
         <Text style={styles.helper}>Volumes usuais por sessão: até 4 exercícios para grupos grandes e 2 para grupos menores. As sugestões podem variar conforme sua experiência.</Text>
         {exercises.map((exercise, index) => {
-          const key = `${selectedWeekday}-${exercise.name}`;
+          const shown = selectedVariations[index] ? { ...exercise, ...selectedVariations[index] } : exercise;
+          const key = `${selectedWeekday}-${index}-${shown.name}`;
           const open = activeDemo === key;
-          return <View key={key} style={styles.exerciseRow}><View style={styles.exerciseNumber}><Text style={styles.exerciseNumberText}>{String(index + 1).padStart(2, '0')}</Text></View><View style={styles.exerciseInfo}><Text style={styles.exerciseName}>{exercise.name}</Text><Text style={styles.exerciseFocus}>{exercise.focus}</Text><Text style={styles.exerciseMeta}>{exercise.sets} séries · {exercise.reps} repetições · pausa {exercise.rest}</Text><Pressable accessibilityRole="button" onPress={() => setActiveDemo(open ? null : key)} style={styles.videoButton}><Text style={styles.videoButtonText}>{open ? 'Fechar vídeo' : '▶  Ver exercício'}</Text></Pressable>{open && exercise.demoVideoId ? <ExerciseDemo videoId={exercise.demoVideoId} title={`Demonstração: ${exercise.name}`} /> : null}{!exercise.demoVideoId ? <Text style={styles.helper}>Demonstração em preparação.</Text> : null}</View></View>;
+          const alternativesOpen = openVariations === index;
+          return <View key={`${selectedWeekday}-${index}`} style={styles.exerciseRow}><View style={styles.exerciseNumber}><Text style={styles.exerciseNumberText}>{String(index + 1).padStart(2, '0')}</Text></View><View style={styles.exerciseInfo}><Text style={styles.exerciseName}>{shown.name}</Text><Text style={styles.exerciseFocus}>Alvo principal: {shown.focus}</Text><Text style={styles.exerciseMeta}>{exercise.sets} séries · {exercise.reps} repetições · pausa {exercise.rest}</Text>{exercise.alternatives?.length ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: alternativesOpen }} onPress={() => setOpenVariations(alternativesOpen ? null : index)} style={styles.swapButton}><Text style={styles.swapText}>{alternativesOpen ? 'Fechar opções' : '↻  Trocar por exercício equivalente'}</Text></Pressable> : null}{alternativesOpen ? <View style={styles.variationList}><Text style={styles.variationHeading}>Opções para o mesmo grupo muscular</Text>{exercise.alternatives?.map((option) => <Pressable key={option.name} accessibilityRole="button" onPress={() => { setSelectedVariations((current) => ({ ...current, [index]: option })); setOpenVariations(null); setActiveDemo(null); }} style={styles.variationOption}><View style={styles.variationCopy}><Text style={styles.variationName}>{option.name}</Text><Text style={styles.variationFocus}>Foco: {option.focus}</Text></View><Text style={styles.variationArrow}>›</Text></Pressable>)}</View> : null}<Pressable accessibilityRole="button" onPress={() => setActiveDemo(open ? null : key)} style={styles.videoButton}><Text style={styles.videoButtonText}>{open ? 'Fechar vídeo' : '▶  Ver exercício'}</Text></Pressable>{open && shown.demoVideoId ? <ExerciseDemo videoId={shown.demoVideoId} title={`Demonstração: ${shown.name} · ${shown.focus}`} /> : null}{!shown.demoVideoId ? <Text style={styles.helper}>Demonstração específica em revisão; este movimento não será substituído por um vídeo diferente.</Text> : null}</View></View>;
         })}
       </View> : <View style={styles.emptyRoutine}><Text style={styles.emptyIcon}>✦</Text><Text style={styles.emptyTitle}>Sua série aparece aqui</Text><Text style={styles.helper}>Escolha peito e tríceps, costas e bíceps, pernas ou qualquer combinação que faça sentido para você.</Text></View>}
 
@@ -172,8 +154,11 @@ const styles = StyleSheet.create({
   statusDot: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: theme.colors.purpleSoft }, statusDone: { backgroundColor: theme.colors.orangeSoft }, statusText: { color: theme.colors.orangeDeep, fontSize: 8, fontWeight: '900', letterSpacing: .6 },
   groupLabel: { color: theme.colors.ink, fontSize: 10, fontWeight: '900', letterSpacing: .8, marginTop: 19, marginBottom: 9 }, groupHint: { color: theme.colors.muted, fontWeight: '600' },
   groupGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 }, groupPill: { minHeight: 36, justifyContent: 'center', borderRadius: 12, paddingHorizontal: 11, backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.line }, groupPillSelected: { backgroundColor: theme.colors.purpleSurface, borderColor: theme.colors.purple }, groupText: { color: theme.colors.muted, fontSize: 9, fontWeight: '800' }, groupTextSelected: { color: theme.colors.orange },
-  actionRow: { flexDirection: 'row', gap: 8, marginTop: 15 }, savePlanButton: { minHeight: 43, minWidth: 105, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.purpleSoft, paddingHorizontal: 13 }, savePlanText: { color: theme.colors.purpleMuted, fontSize: 10, fontWeight: '900' }, checkinButton: { flex: 1, minHeight: 43, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.orange, paddingHorizontal: 13 }, checkinText: { color: theme.colors.dark, fontSize: 10, fontWeight: '900', textAlign: 'center' }, disabled: { opacity: .55 }, notice: { color: theme.colors.orangeDeep, fontSize: 10, fontWeight: '700', marginTop: 10 },
+  actionRow: { flexDirection: 'row', gap: 8, marginTop: 15 }, savePlanFull: { flex: 1 }, savePlanButton: { minHeight: 43, minWidth: 105, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.purpleSoft, paddingHorizontal: 13 }, savePlanText: { color: theme.colors.purpleMuted, fontSize: 10, fontWeight: '900' }, checkinButton: { flex: 1, minHeight: 43, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.orange, paddingHorizontal: 13 }, checkinText: { color: theme.colors.dark, fontSize: 10, fontWeight: '900', textAlign: 'center' }, disabled: { opacity: .55 }, notice: { color: theme.colors.orangeDeep, fontSize: 10, fontWeight: '700', marginTop: 10 },
   routine: { marginTop: 22, borderTopWidth: 1, borderTopColor: theme.colors.line, paddingTop: 16 }, routineHeading: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10 }, routineTitle: { color: theme.colors.ink, fontSize: 16, fontWeight: '900', marginTop: 5 }, exerciseCount: { color: theme.colors.purpleMuted, fontSize: 9, fontWeight: '800', marginBottom: 2 }, helper: { color: theme.colors.muted, fontSize: 9, lineHeight: 14, marginTop: 8 },
   exerciseRow: { flexDirection: 'row', gap: 11, borderBottomWidth: 1, borderBottomColor: theme.colors.line, paddingVertical: 12 }, exerciseNumber: { width: 33, height: 33, borderRadius: 11, backgroundColor: theme.colors.orangeSoft, alignItems: 'center', justifyContent: 'center', marginTop: 2 }, exerciseNumberText: { color: theme.colors.orangeDeep, fontSize: 10, fontWeight: '900' }, exerciseInfo: { flex: 1 }, exerciseName: { color: theme.colors.ink, fontSize: 12, fontWeight: '900' }, exerciseFocus: { color: theme.colors.muted, fontSize: 9, marginTop: 3 }, exerciseMeta: { color: theme.colors.orangeDeep, fontSize: 9, fontWeight: '800', marginTop: 5 }, videoButton: { alignSelf: 'flex-start', marginTop: 7, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: theme.colors.purpleSoft }, videoButtonText: { color: theme.colors.purpleMuted, fontSize: 9, fontWeight: '900' },
+  swapButton: { alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, borderWidth: 1, borderColor: theme.colors.purple, backgroundColor: theme.colors.background }, swapText: { color: theme.colors.purpleMuted, fontSize: 9, fontWeight: '900' }, variationList: { marginTop: 8, padding: 10, borderRadius: 12, backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.line }, variationHeading: { color: theme.colors.muted, fontSize: 8, fontWeight: '800', marginBottom: 5 }, variationOption: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9, borderTopWidth: 1, borderTopColor: theme.colors.line }, variationCopy: { flex: 1 }, variationName: { color: theme.colors.ink, fontSize: 10, fontWeight: '900' }, variationFocus: { color: theme.colors.muted, fontSize: 8, marginTop: 2 }, variationArrow: { color: theme.colors.orange, fontSize: 17, fontWeight: '900' },
   emptyRoutine: { marginTop: 20, padding: 17, borderRadius: 17, backgroundColor: theme.colors.background, alignItems: 'center' }, emptyIcon: { color: theme.colors.orange, fontSize: 20 }, emptyTitle: { color: theme.colors.ink, fontSize: 13, fontWeight: '900', marginTop: 6 }, footerHint: { color: theme.colors.muted, fontSize: 9, lineHeight: 14, marginTop: 18 },
 });
+
+
