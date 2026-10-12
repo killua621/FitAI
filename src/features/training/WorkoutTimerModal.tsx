@@ -72,7 +72,7 @@ export function WorkoutTimerModal({
         setRemaining(secondsLeft);
         if (secondsLeft === 0) setPhase('ready');
       }
-    }, 250);
+    }, 1000);
     return () => clearInterval(interval);
   }, [phase, restEndsAt, workStartedAt]);
 
