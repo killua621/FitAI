@@ -237,23 +237,42 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
       setProfileLoading(true);
       setWaterLoading(true);
-      const [profileResult, waterResult, checkinsResult, weightsResult, plansResult] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle(),
+      let profileResult;
+      try {
+        profileResult = await supabase.from('profiles').select('*').eq('id', currentSession.user.id).maybeSingle();
+        if (profileResult.error) throw profileResult.error;
+      } catch {
+        if (active) {
+          setProfile(null);
+          setProfileLoading(false);
+          setLoading(false);
+          setWaterLoading(false);
+        }
+        return;
+      }
+      if (!active) return;
+      setProfile(profileResult.data ? { ...profileResult.data, age: calculateAge(profileResult.data.date_of_birth) ?? profileResult.data.age } as Profile : null);
+      setProfileLoading(false);
+      setLoading(false);
+
+      // Render the app as soon as its profile is ready. Secondary dashboards
+      // load in the background so a slow history query cannot delay navigation.
+      void Promise.allSettled([
         loadWaterForUser(currentSession.user.id),
         loadWorkoutCheckins(currentSession.user.id),
         loadWeightHistory(currentSession.user.id),
-        loadTrainingWeekPlans(currentSession.user.id).catch(() => [] as TrainingWeekPlan[]),
-      ]);
-      if (!active) return;
-      setProfile(profileResult.data ? { ...profileResult.data, age: calculateAge(profileResult.data.date_of_birth) ?? profileResult.data.age } as Profile : null);
-      setWaterTotalMl(waterResult);
-      setWorkoutCheckinDetails(checkinsResult);
-      setWorkoutCheckinDates(checkinsResult.map((row) => row.checkin_date));
-      setTrainingWeekPlans(plansResult);
-      setWeightHistory(weightsResult);
-      setProfileLoading(false);
-      setWaterLoading(false);
-      setLoading(false);
+        loadTrainingWeekPlans(currentSession.user.id),
+      ]).then(([waterResult, checkinsResult, weightsResult, plansResult]) => {
+        if (!active) return;
+        if (waterResult.status === 'fulfilled') setWaterTotalMl(waterResult.value);
+        if (checkinsResult.status === 'fulfilled') {
+          setWorkoutCheckinDetails(checkinsResult.value);
+          setWorkoutCheckinDates(checkinsResult.value.map((row) => row.checkin_date));
+        }
+        if (weightsResult.status === 'fulfilled') setWeightHistory(weightsResult.value);
+        if (plansResult.status === 'fulfilled') setTrainingWeekPlans(plansResult.value);
+        setWaterLoading(false);
+      });
     };
 
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
@@ -262,7 +281,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
       });
     }).catch(() => { if (active) setLoading(false); });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // Initial session is handled by getSession above; token refreshes keep the
+      // same user and should not trigger another round of profile/history reads.
+      if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') return;
       setTimeout(() => { void loadSessionData(nextSession).catch(() => {
         if (active) { setLoading(false); setProfileLoading(false); setWaterLoading(false); }
       }); }, 0);
@@ -287,3 +309,4 @@ export function useAuth() {
   if (!value) throw new Error('useAuth deve ser usado dentro de AuthProvider.');
   return value;
 }
+
