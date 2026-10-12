@@ -2,6 +2,8 @@ import type { ExerciseSeed, ExerciseVariation, TrainingMuscleGroup } from '@/fea
 
 type DemoEntry = { id: string; aliases: string[] };
 
+const normalizeExerciseName = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLocaleLowerCase('pt-BR');
+
 // IDs conferidos na biblioteca pública de Shorts de Ricardo Cipolli.
 // O nome de cada vídeo foi comparado ao movimento antes de associá-lo.
 const demoEntries: DemoEntry[] = [
@@ -372,12 +374,16 @@ export const exerciseCatalog: Record<TrainingMuscleGroup, ExerciseSeed[]> = {
 export function getExerciseAlternatives(
   exercise: Pick<ExerciseSeed, 'name' | 'area'>,
   preferredGroup?: TrainingMuscleGroup,
+  excludedNames: string[] = [],
 ): ExerciseVariation[] {
   const group = preferredGroup || (Object.keys(exerciseCatalog) as TrainingMuscleGroup[])
     .find((candidate) => exerciseCatalog[candidate].some((item) => item.name === exercise.name));
   if (!group) return [];
+  const excluded = new Set(excludedNames.map(normalizeExerciseName));
   const options = exerciseCatalog[group].filter((item) =>
-    item.name !== exercise.name && (!exercise.area || item.area === exercise.area),
+    normalizeExerciseName(item.name) !== normalizeExerciseName(exercise.name)
+      && !excluded.has(normalizeExerciseName(item.name))
+      && (!exercise.area || item.area === exercise.area),
   );
   return options.slice(0, 3).map((item) => ({
     name: item.name,
