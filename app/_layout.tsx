@@ -30,7 +30,7 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <RouteGuard>
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background }, animation: 'fade' }} />
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background }, animation: 'none' }} />
       </RouteGuard>
       <HydrationReminder />
     </AuthProvider>
@@ -38,3 +38,4 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({ loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background } });
+
