@@ -21,27 +21,6 @@ export default function TrainingScreen() {
     <Screen scroll footer={<AppTabBar active="/workout" />} style={styles.screen}>
       <PageIntro eyebrow="TREINO GUIADO" title="Seu treino, dia a dia" description="Monte sua semana, explore a biblioteca por músculo e confira demonstrações 3D nos exercícios com vídeo verificado." />
 
-      <View style={styles.workoutHero}>
-        <View pointerEvents="none" style={styles.heroGlow} />
-        <View style={styles.heroTop}>
-          <View style={styles.heroIcon}><Text style={styles.heroIconText}>✦</Text></View>
-          <View style={styles.heroBadge}><View style={styles.heroBadgeDot} /><Text style={styles.heroBadgeText}>TREINO GUIADO</Text></View>
-        </View>
-        <Text style={styles.heroKicker}>TREINE · DESCANSE · REPITA</Text>
-        
-        <Text style={styles.heroCopy}>Toque em “Iniciar exercício” para abrir o cronômetro. Marque cada série e faça 1:30 de descanso entre elas.</Text>
-        <View style={styles.heroSteps}>
-          <View style={styles.heroStep}><Text style={styles.heroStepNumber}>01</Text><Text style={styles.heroStepLabel}>Toque em iniciar</Text></View>
-          <View style={styles.heroStep}><Text style={styles.heroStepNumber}>02</Text><Text style={styles.heroStepLabel}>Marque cada série</Text></View>
-          <View style={styles.heroStep}><Text style={styles.heroStepNumber}>03</Text><Text style={styles.heroStepLabel}>Descanse 1:30</Text></View>
-        </View>
-        <Text style={styles.heroFinish}>Na última série, toque em “Terminei · marcar FEITO”.</Text>
-        <View style={styles.heroTargets}>
-          <View style={styles.heroTargetLarge}><Text style={styles.heroTargetText}>GRUPOS GRANDES · 3 SÉRIES</Text></View>
-          <View style={styles.heroTargetSmall}><Text style={styles.heroTargetText}>OMBROS E BRAÇOS · 2</Text></View>
-        </View>
-      </View>
-
       <TrainingWeekBuilder />
 
       <View style={styles.guidanceCard}><View style={styles.cardIcon}><Text style={styles.cardIconText}>↗</Text></View><Text style={styles.eyebrow}>COMO PROGREDIR</Text><Text style={styles.cardTitle}>Técnica primeiro, carga aos poucos</Text><Text style={styles.cardCopy}>{program.method}</Text></View>
