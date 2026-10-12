@@ -162,6 +162,7 @@ export function TrainingWeekBuilder() {
 
   const exerciseKey = (index: number, name: string) => `${selectedDay.key}-${index}-${name}`;
   const getShownExercise = (index: number, exercise: (typeof exercises)[number]) => ({ ...exercise, ...selectedVariations[index] });
+  const exercisesAlreadyInRoutine = new Set(exercises.map((item, index) => normalizeExerciseName(getShownExercise(index, item).name)));
   const allExercisesComplete = exercises.length > 0 && exercises.every((exercise, index) => {
     const shown = getShownExercise(index, exercise);
     return finishedExercises[exerciseKey(index, shown.name)] === true;
@@ -209,7 +210,6 @@ export function TrainingWeekBuilder() {
           const key = exerciseKey(index, shown.name);
           const open = activeDemo === key;
           const alternativesOpen = openVariations === index;
-          const exercisesAlreadyInRoutine = new Set(exercises.map((item, itemIndex) => normalizeExerciseName(getShownExercise(itemIndex, item).name)));
           const availableAlternatives = (exercise.alternatives || []).filter((option) => !exercisesAlreadyInRoutine.has(normalizeExerciseName(option.name)));
           const done = Math.min(completedSets[key] || 0, exercise.sets);
           const isComplete = finishedExercises[key] === true;
