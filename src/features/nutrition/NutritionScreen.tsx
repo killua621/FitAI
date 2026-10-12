@@ -55,7 +55,7 @@ export default function NutritionScreen() {
 
       <Pressable accessibilityRole="button" onPress={() => router.push('/meal-planner' as Href)} style={({ pressed }) => [styles.plannerCard, { borderColor: theme.colors.pink, backgroundColor: '#2A1530' }, pressed && styles.plannerPressed]}>
         <View style={[styles.plannerIcon, { backgroundColor: theme.colors.pink }]}><Text style={[styles.plannerGlyph, { color: '#27101F' }]}>＋</Text></View>
-        <View style={styles.plannerCopy}><Text style={[styles.eyebrow, { color: theme.colors.pinkDeep }]}>DIÁRIO E DICAS</Text><Text style={styles.plannerTitle}>Registrar alimentos e ver ideias</Text><Text style={styles.plannerHint}>Acompanhe proteína e outros nutrientes do dia; consulte sugestões que respeitam suas alergias cadastradas.</Text></View>
+        <View style={styles.plannerCopy}><Text style={styles.eyebrow}>DIÁRIO E DICAS</Text><Text style={styles.plannerTitle}>Registrar alimentos e ver ideias</Text><Text style={styles.plannerHint}>Acompanhe proteína e outros nutrientes do dia; consulte sugestões que respeitam suas alergias cadastradas.</Text></View>
         <View style={[styles.plannerArrow, { backgroundColor: theme.colors.pinkSoft }]}><Text style={[styles.plannerArrowText, { color: theme.colors.pink }]}>↗</Text></View>
       </Pressable>
 
@@ -65,11 +65,11 @@ export default function NutritionScreen() {
       </View>
 
       <Pressable accessibilityRole="link" accessibilityLabel="Conversar com a nutricionista Cinthia Firmino pelo WhatsApp" onPress={() => void openProfessionalWhatsApp()} style={styles.expertCard}>
-        <View style={styles.expertIcon}><Text style={styles.expertIconText}>◉</Text></View><View style={styles.expertCopy}><Text style={[styles.eyebrow, { color: theme.colors.pinkDeep }]}>ACOMPANHAMENTO PROFISSIONAL</Text><Text style={styles.expertTitle}>Cinthia Firmino</Text><Text style={styles.expertSubtitle}>Nutricionista · +55 21 98014-7390</Text></View><Text style={styles.expertArrow}>↗</Text>
+        <View style={styles.expertIcon}><Text style={styles.expertIconText}>◉</Text></View><View style={styles.expertCopy}><Text style={styles.eyebrow}>ACOMPANHAMENTO PROFISSIONAL</Text><Text style={styles.expertTitle}>Cinthia Firmino</Text><Text style={styles.expertSubtitle}>Nutricionista · +55 21 98014-7390</Text></View><Text style={styles.expertArrow}>↗</Text>
       </Pressable>
 
       <View style={styles.sourcesCard}>
-        <Pressable accessibilityRole="button" accessibilityState={{ expanded: sourceOpen }} onPress={() => setSourceOpen((open) => !open)} style={styles.sourcesToggle}><View><Text style={[styles.eyebrow, { color: theme.colors.pinkDeep }]}>NOSSOS PRINCÍPIOS</Text><Text style={styles.sourcesTitle}>Sugestões simples e flexíveis</Text></View><Text style={styles.sourcesArrow}>{sourceOpen ? '−' : '+'}</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityState={{ expanded: sourceOpen }} onPress={() => setSourceOpen((open) => !open)} style={styles.sourcesToggle}><View><Text style={styles.eyebrow}>NOSSOS PRINCÍPIOS</Text><Text style={styles.sourcesTitle}>Sugestões simples e flexíveis</Text></View><Text style={styles.sourcesArrow}>{sourceOpen ? '−' : '+'}</Text></Pressable>
         {sourceOpen ? <><Text style={styles.sourcesCopy}>Priorizamos variedade e alimentos in natura ou minimamente processados, como recomenda o Guia Alimentar brasileiro. As sugestões são educativas e não substituem um plano individual.</Text>{nutritionSources.map((source) => <Pressable key={source.url} accessibilityRole="link" onPress={() => void openSource(source.url)} style={styles.sourceLink}><Text style={styles.sourceText}>{source.label}  ↗</Text></Pressable>)}</> : null}
       </View>
     </Screen>

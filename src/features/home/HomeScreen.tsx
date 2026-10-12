@@ -46,7 +46,7 @@ export default function HomeScreen() {
       <View style={styles.intro}><Text style={styles.eyebrow}>SEU DIA, NO SEU RITMO</Text><Text style={styles.heading}>Olá, {firstName}!</Text><Text style={styles.subheading}>Um passo de cada vez. O que vamos fazer hoje?</Text></View>
 
       <View style={[styles.checkinCard, { backgroundColor: '#241326', borderWidth: 1, borderColor: theme.colors.pinkSurface }]}>
-        <View style={styles.cardTop}><View><Text style={[styles.cardEyebrow, { color: theme.colors.pinkDeep }]}>CHECK-IN DE HOJE · {weekdayLabels[todayIndex].toUpperCase()}</Text><Text style={styles.cardTitle}>{today.checkedIn ? 'Você já marcou presença!' : 'Foi treinar hoje?'}</Text></View><View style={[styles.checkIcon, { backgroundColor: theme.colors.pinkSoft }]}><Text style={[styles.checkIconText, { color: theme.colors.pink }]}>{today.checkedIn ? '✓' : '↗'}</Text></View></View>
+        <View style={styles.cardTop}><View><Text style={[styles.cardEyebrow, { color: theme.colors.pinkDeep }]}>CHECK-IN DE HOJE · {weekdayLabels[todayIndex].toUpperCase()}</Text><Text style={styles.cardTitle}>{today.checkedIn ? 'Você já marcou presença!' : 'Foi treinar hoje?'}</Text></View><View style={[styles.checkIcon, { backgroundColor: theme.colors.pinkSoft }]}><Text style={[styles.checkIconText, { color: theme.colors.pink }] }>{today.checkedIn ? '✓' : '↗'}</Text></View></View>
         <Text style={styles.cardCopy}>{today.checkedIn ? 'Seu esforço já está registrado no seu progresso.' : 'Depois do treino, registre aqui musculação, cardio, aula ou outra atividade.'}</Text>
         <Pressable accessibilityRole="button" disabled={checkingIn || today.checkedIn} onPress={() => { setWorkoutFocus(''); setActivityType('Musculação'); setCheckinOpen(true); }} style={[styles.checkinButton, { backgroundColor: today.checkedIn ? theme.colors.pinkSurface : theme.colors.pink }, checkingIn && { opacity: 0.7 }]}><Text style={styles.checkinButtonText}>{today.checkedIn ? '✓  Check-in concluído' : 'Registrar atividade de hoje'}</Text></Pressable>
         <View style={styles.weekSummary}><Text style={styles.weekSummaryValue}>{week.count}<Text style={styles.weekSummaryTotal}>/{daysPerWeek}</Text></Text><Text style={styles.weekSummaryLabel}>treinos registrados esta semana</Text></View>
@@ -61,7 +61,6 @@ export default function HomeScreen() {
         <WaterTracker compact />
       </View>
 
-      
       <Modal visible={checkinOpen} transparent animationType="fade" onRequestClose={() => setCheckinOpen(false)}>
         <View style={styles.modalShade}><View style={styles.modalCard}>
           <Text style={styles.modalEyebrow}>CHECK-IN DE HOJE · {weekdayLabels[todayIndex].toUpperCase()}</Text><Text style={styles.modalTitle}>O que você fez?</Text><Text style={styles.modalCopy}>Seu registro fica salvo no seu histórico.</Text>
