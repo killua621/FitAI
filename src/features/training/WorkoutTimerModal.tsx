@@ -54,7 +54,7 @@ export function WorkoutTimerModal({
   onFinishExercise,
 }: Props) {
   const restSeconds = getRestTimerSeconds(exercise.rest);
-  const [phase, setPhase] = useState<Phase>('working');
+  const [phase, setPhase] = useState<Phase>(initialCompletedSets >= exercise.sets ? 'finished' : 'working');
   const [completedSets, setCompletedSets] = useState(initialCompletedSets);
   const [workStartedAt, setWorkStartedAt] = useState(Date.now);
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
@@ -175,7 +175,7 @@ export function WorkoutTimerModal({
 
             {phase === 'finished' ? (
               <Pressable accessibilityRole="button" onPress={onFinishExercise} style={styles.primaryButton}>
-                <Text style={styles.primaryButtonText}>{nextExerciseName ? 'Concluir e avançar' : 'Concluir exercício'}</Text>
+                <Text style={styles.primaryButtonText}>Terminei · marcar FEITO</Text>
               </Pressable>
             ) : null}
 
@@ -221,3 +221,4 @@ const styles = StyleSheet.create({
   demoButtonText: { color: theme.colors.purpleMuted, fontSize: 11, fontWeight: '800' },
   demoFrame: { width: '100%', overflow: 'hidden', borderRadius: 14, marginTop: 8 },
 });
+
