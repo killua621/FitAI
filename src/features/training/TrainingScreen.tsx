@@ -28,7 +28,7 @@ export default function TrainingScreen() {
           <View style={styles.heroBadge}><View style={styles.heroBadgeDot} /><Text style={styles.heroBadgeText}>TREINO GUIADO</Text></View>
         </View>
         <Text style={styles.heroKicker}>TREINE · DESCANSE · REPITA</Text>
-        <Text style={styles.heroTitle}>Sua próxima série começa aqui.</Text>
+        
         <Text style={styles.heroCopy}>Toque em “Iniciar exercício” para abrir o cronômetro. Marque cada série e faça 1:30 de descanso entre elas.</Text>
         <View style={styles.heroSteps}>
           <View style={styles.heroStep}><Text style={styles.heroStepNumber}>01</Text><Text style={styles.heroStepLabel}>Toque em iniciar</Text></View>
