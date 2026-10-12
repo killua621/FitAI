@@ -172,14 +172,23 @@ export default function AuthScreen() {
     const type = Array.isArray(rawType) ? rawType[0] : rawType;
     const requestedMode = Array.isArray(rawMode) ? rawMode[0] : rawMode;
 
-    const hash = typeof window !== 'undefined' && window.location ? window.location.hash : '';
+    // URL fragments are only available for web callbacks. Avoid touching
+    // browser URL APIs while this screen is mounted in the native app.
+    const hash =
+      Platform.OS === 'web' &&
+      typeof window !== 'undefined' &&
+      window.location
+        ? window.location.hash
+        : '';
 
-    const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
+    const hashParams = hash
+      ? new URLSearchParams(hash.replace(/^#/, ''))
+      : null;
 
-    const accessToken = hashParams.get('access_token');
-    const refreshToken = hashParams.get('refresh_token');
+    const accessToken = hashParams?.get('access_token') ?? null;
+    const refreshToken = hashParams?.get('refresh_token') ?? null;
 
-    const callbackType = hashParams.get('type') || type;
+    const callbackType = hashParams?.get('type') || type;
 
     if (
       callbackProcessed.current ||
