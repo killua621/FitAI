@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppTabBar } from '@/components/AppTabBar';
 import { PageIntro } from '@/components/PageIntro';
@@ -9,7 +10,7 @@ import { theme } from '@/theme';
 
 export default function TrainingScreen() {
   const { profile } = useAuth();
-  const program = buildTrainingProgram(profile || {});
+  const program = useMemo(() => buildTrainingProgram(profile || {}), [profile]);
 
   const contactTrainer = async () => {
     try { await Linking.openURL('https://wa.me/5521969682162'); }
