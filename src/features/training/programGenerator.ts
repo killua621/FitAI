@@ -24,17 +24,21 @@ export const trainingMuscleGroups = [
 export type TrainingMuscleGroup = (typeof trainingMuscleGroups)[number];
 
 const largeMuscleGroups = new Set<TrainingMuscleGroup>([
-  'Peito', 'Costas', 'Ombros', 'Quadríceps', 'Posterior de coxa', 'Glúteos', 'Abdômen',
+  'Peito', 'Costas', 'Quadríceps', 'Posterior de coxa', 'Glúteos', 'Abdômen',
 ]);
+const twoSetMuscleGroups = new Set<TrainingMuscleGroup>(trainingMuscleGroups.filter((group) => !largeMuscleGroups.has(group)));
 
-export function buildCustomTrainingExercises(groups: TrainingMuscleGroup[], experienceLevel?: string | null): Exercise[] {
-  const beginner = experienceLevel === 'Estou começando';
+function getSetsForGroup(group: TrainingMuscleGroup) {
+  return twoSetMuscleGroups.has(group) ? 2 : 3;
+}
+
+export function buildCustomTrainingExercises(groups: TrainingMuscleGroup[]): Exercise[] {
   const seeds = uniqueExercises(groups.flatMap((group) =>
     exerciseCatalog[group].slice(0, largeMuscleGroups.has(group) ? 4 : 2).map((exercise) => ({ exercise, group })),
   ));
   return seeds.map(({ exercise, group }) => ({
     ...exercise,
-    sets: beginner ? 2 : 3,
+    sets: getSetsForGroup(group),
     reps: exercise.reps || '8–12',
     rest: exercise.rest || '90–120 s',
     demoVideoId: demoVideoFor(exercise.name),
@@ -45,9 +49,9 @@ export function buildCustomTrainingExercises(groups: TrainingMuscleGroup[], expe
 export function getExerciseLibrary(group: TrainingMuscleGroup): Exercise[] {
   return exerciseCatalog[group].map((exercise) => ({
     ...exercise,
-    sets: 3,
+    sets: getSetsForGroup(group),
     reps: exercise.reps || '8–12',
-    rest: exercise.rest || '60–90 s',
+    rest: exercise.rest || '90 s',
     demoVideoId: demoVideoFor(exercise.name),
     alternatives: getExerciseAlternatives(exercise, group),
   }));
@@ -164,10 +168,15 @@ const upperBodySessions: Record<number, SessionSeed[]> = {
   ],
 };
 
+function getSetsForExercise(exercise: ExerciseSeed) {
+  const focus = exercise.focus.trim().toLocaleLowerCase('pt-BR');
+  const isSmallMuscleFocus = /^(?:ombros?|parte posterior dos ombros|bíceps|tríceps|trapézio|antebraços?|adutores?|panturrilhas?|lombar)\b/.test(focus);
+  return isSmallMuscleFocus ? 2 : 3;
+}
+
 export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram {
   const days = Math.max(2, Math.min(6, profile.training_days || 3));
   const goal = profile.goal || 'Ganhar massa muscular';
-  const beginner = profile.experience_level === 'Estou começando';
   const reps = goal === 'Melhorar condicionamento' ? '10–15' : '8–12';
   const requestedEmphasis = profile.training_emphasis || 'automatic';
   // This is a product default requested by ScholzFit, not a physiological rule; users can override it.
@@ -196,7 +205,7 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
     duration: sessionExercises.length >= 6 ? 55 : sessionExercises.length >= 5 ? 45 : 40,
     exercises: sessionExercises.map((exercise) => ({
       ...exercise,
-      sets: exercise.priority ? (beginner ? 3 : 4) : 3,
+      sets: getSetsForExercise(exercise),
       reps: exercise.reps || reps,
       rest: exercise.rest || '90–120 s',
       demoVideoId: demoVideoFor(exercise.name),
@@ -236,7 +245,7 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
     title,
     subtitle,
     sessions,
-    method: `Comece com 3 séries por exercício. Se já treina há algum tempo e mantém boa técnica, os movimentos principais podem ter 4 séries. Faça ${reps} repetições controladas, sem precisar chegar à falha em todas as séries. Ao atingir o topo da faixa com técnica estável, aumente a carga aos poucos. Descanse 90–120 s nos movimentos principais.`,
+    method: `Use 3 séries nos grupos grandes e 2 para ombros, braços e outros grupos menores. Faça ${reps} repetições controladas, sem precisar chegar à falha em todas as séries. Ao atingir o topo da faixa com técnica estável, aumente a carga aos poucos. Descanse 90 s entre as séries.`,
     cardio: profile.age && profile.age < 18
       ? 'Menores de 18 anos precisam de atividades e progressão adequadas à idade, com supervisão. Este plano foi pensado como referência para adultos.'
       : 'Para adultos, a OMS recomenda acumular 150–300 min de atividade moderada (ou 75–150 min vigorosa) por semana e fortalecer os principais grupos musculares em 2 ou mais dias. Comece de onde está; ganhar massa não exige zerar o cardio.',
