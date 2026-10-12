@@ -18,7 +18,7 @@ export default function TrainingScreen() {
 
   return (
     <Screen scroll footer={<AppTabBar active="/workout" />} style={styles.screen}>
-      <PageIntro eyebrow="MOVIMENTO NO SEU RITMO" title="Seu treino, dia a dia" description="Monte sua semana, explore a biblioteca por músculo e confira demonstrações 3D nos exercícios com vídeo verificado." />
+      <PageIntro eyebrow="TREINO GUIADO" title="Seu treino, dia a dia" description="Monte sua semana, explore a biblioteca por músculo e confira demonstrações 3D nos exercícios com vídeo verificado." />
 
       <View style={styles.workoutHero}>
         <View pointerEvents="none" style={styles.heroGlow} />
@@ -27,7 +27,7 @@ export default function TrainingScreen() {
           <View style={styles.heroBadge}><View style={styles.heroBadgeDot} /><Text style={styles.heroBadgeText}>TREINO GUIADO</Text></View>
         </View>
         <Text style={styles.heroKicker}>TREINE · DESCANSE · REPITA</Text>
-        <Text style={styles.heroTitle}>Seu ritmo. Sua próxima série.</Text>
+        <Text style={styles.heroTitle}>Sua próxima série começa aqui.</Text>
         <Text style={styles.heroCopy}>Toque em “Iniciar exercício” para abrir o cronômetro. Marque cada série e faça 1:30 de descanso entre elas.</Text>
         <View style={styles.heroSteps}>
           <View style={styles.heroStep}><Text style={styles.heroStepNumber}>01</Text><Text style={styles.heroStepLabel}>Toque em iniciar</Text></View>
