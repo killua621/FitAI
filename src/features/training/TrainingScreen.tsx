@@ -67,7 +67,6 @@ const styles = StyleSheet.create({
   heroBadgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: theme.colors.orange },
   heroBadgeText: { color: theme.colors.pinkMuted, fontSize: 8, fontWeight: '900', letterSpacing: 0.8 },
   heroKicker: { color: theme.colors.orange, fontSize: 9, fontWeight: '900', letterSpacing: 1.4, marginTop: 17 },
-  heroTitle: { color: theme.colors.white, fontSize: 21, lineHeight: 27, letterSpacing: -0.3, fontWeight: '900', marginTop: 5 },
   heroCopy: { color: '#E0D3E6', fontSize: 11, lineHeight: 17, marginTop: 6 },
   heroSteps: { flexDirection: 'row', gap: 6, marginTop: 15 },
   heroStep: { flex: 1, minHeight: 62, justifyContent: 'center', borderRadius: 13, paddingHorizontal: 8, paddingVertical: 8, backgroundColor: 'rgba(255,93,187,0.10)', borderWidth: 1, borderColor: 'rgba(255,93,187,0.35)' },
