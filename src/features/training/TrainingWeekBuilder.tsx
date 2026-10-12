@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ExerciseDemo } from '@/features/training/ExerciseDemo';
+import { WorkoutTimerModal, type WorkoutTimerExercise } from '@/features/training/WorkoutTimerModal';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { buildCustomTrainingExercises, getExerciseLibrary, trainingMuscleGroups, type TrainingMuscleGroup } from '@/features/training/programGenerator';
 import { getCurrentWeekCheckins, getCurrentWeekStartKey, localDateKey, weekdayTabLabels } from '@/features/training/checkins';
@@ -12,7 +14,7 @@ function normalizeGroupList(value: string | null | undefined): TrainingMuscleGro
 }
 
 export function TrainingWeekBuilder() {
-  const { profile, workoutCheckinDetails, trainingWeekPlans, refreshTrainingWeekPlans, saveTrainingWeekPlan } = useAuth();
+  const { profile, workoutCheckinDetails, trainingWeekPlans, refreshTrainingWeekPlans, saveTrainingWeekPlan, addWorkoutCheckin } = useAuth();
   const [selectedWeekday, setSelectedWeekday] = useState((new Date().getDay() + 6) % 7);
   const [weekKey, setWeekKey] = useState(getCurrentWeekStartKey());
   const [selectedGroups, setSelectedGroups] = useState<TrainingMuscleGroup[]>([]);
@@ -22,6 +24,10 @@ export function TrainingWeekBuilder() {
   const [openVariations, setOpenVariations] = useState<number | null>(null);
   const [openLibraryGroup, setOpenLibraryGroup] = useState<TrainingMuscleGroup | null>(null);
   const [activeDemo, setActiveDemo] = useState<string | null>(null);
+  const [completedSets, setCompletedSets] = useState<Record<string, number>>({});
+  const [activeExercise, setActiveExercise] = useState<(WorkoutTimerExercise & { index: number }) | null>(null);
+  const [timerVisible, setTimerVisible] = useState(false);
+  const [finishingWorkout, setFinishingWorkout] = useState(false);
   const [notice, setNotice] = useState('');
   const week = getCurrentWeekCheckins(workoutCheckinDetails.map((entry) => entry.checkin_date));
   const selectedDay = week.days[selectedWeekday];
@@ -32,6 +38,11 @@ export function TrainingWeekBuilder() {
   const isFutureDay = selectedDay.key > todayKey;
   const exercises = useMemo(() => buildCustomTrainingExercises(selectedGroups, profile?.experience_level), [selectedGroups, profile?.experience_level]);
   const libraryExercises = useMemo(() => openLibraryGroup ? getExerciseLibrary(openLibraryGroup) : [], [openLibraryGroup]);
+  const workoutProgressKey = profile?.id && selectedGroups.length
+    ? `scholzfit:workout-progress:${profile.id}:${selectedDay.key}:${selectedGroups.join('-')}`
+    : null;
+  const [loadedProgressKey, setLoadedProgressKey] = useState<string | null>(null);
+  const progressReady = workoutProgressKey === null || loadedProgressKey === workoutProgressKey;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -66,8 +77,43 @@ export function TrainingWeekBuilder() {
     setOpenVariations(null);
   }, [weekKey, selectedWeekday, selectedPlan?.muscle_groups, savedCheckin?.workout_focus]);
 
+  useEffect(() => {
+    setCompletedSets({});
+    setActiveExercise(null);
+    setTimerVisible(false);
+    if (!workoutProgressKey) {
+      setLoadedProgressKey(null);
+      return;
+    }
+    let active = true;
+    void AsyncStorage.getItem(workoutProgressKey).then((saved) => {
+      if (!active) return;
+      if (!saved) return;
+      try {
+        const parsed = JSON.parse(saved) as Record<string, unknown>;
+        const safeProgress = Object.fromEntries(Object.entries(parsed).filter((entry): entry is [string, number] => typeof entry[1] === 'number' && Number.isFinite(entry[1]) && entry[1] >= 0));
+        setCompletedSets(safeProgress);
+      } catch {
+        setCompletedSets({});
+      }
+    }).catch(() => {
+      if (active) setCompletedSets({});
+    }).finally(() => {
+      if (active) setLoadedProgressKey(workoutProgressKey);
+    });
+    return () => { active = false; };
+  }, [workoutProgressKey]);
+
+  useEffect(() => {
+    if (!workoutProgressKey || loadedProgressKey !== workoutProgressKey) return;
+    void AsyncStorage.setItem(workoutProgressKey, JSON.stringify(completedSets)).catch(() => {});
+  }, [completedSets, loadedProgressKey, workoutProgressKey]);
+
   const toggleGroup = (group: TrainingMuscleGroup) => {
     setNotice('');
+    setCompletedSets({});
+    setActiveExercise(null);
+    setTimerVisible(false);
     if (selectedGroups.includes(group)) {
       setOpenLibraryGroup((current) => current === group ? null : current);
     } else {
@@ -99,6 +145,30 @@ export function TrainingWeekBuilder() {
     } finally { setSavingPlan(false); }
   };
 
+  const exerciseKey = (index: number, name: string) => `${selectedDay.key}-${index}-${name}`;
+  const getShownExercise = (index: number, exercise: (typeof exercises)[number]) => ({ ...exercise, ...selectedVariations[index] });
+  const allExercisesComplete = exercises.length > 0 && exercises.every((exercise, index) => {
+    const shown = getShownExercise(index, exercise);
+    return (completedSets[exerciseKey(index, shown.name)] || 0) >= exercise.sets;
+  });
+
+  const registerWorkout = async () => {
+    if (!selectedDay.isToday) {
+      setNotice('Para registrar o treino, selecione o dia de hoje.');
+      return;
+    }
+    setFinishingWorkout(true);
+    setNotice('');
+    try {
+      const added = await addWorkoutCheckin(`Treino ${selectedGroups.join(' + ')}`, 'Musculação', selectedGroups.join(' + '), selectedDay.key);
+      setNotice(added ? 'Treino concluído e registrado no seu histórico.' : 'O treino de hoje já estava registrado.');
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Não foi possível registrar o treino. Tente novamente.');
+    } finally {
+      setFinishingWorkout(false);
+    }
+  };
+
   const selectedDateLabel = new Date(`${selectedDay.key}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
 
   return (
@@ -110,7 +180,7 @@ export function TrainingWeekBuilder() {
         const record = workoutCheckinDetails.find((entry) => entry.checkin_date === day.key);
         const plan = trainingWeekPlans.find((entry) => entry.weekday === index);
         const dayGroups = record?.workout_focus || plan?.muscle_groups.join(' + ') || '';
-        return <Pressable key={day.key} accessibilityRole="button" accessibilityLabel={`${weekdayTabLabels[index]}${day.checkedIn ? `, treino registrado: ${record?.workout_focus || 'sim'}` : ''}`} accessibilityState={{ selected: index === selectedWeekday }} onPress={() => { setSelectedWeekday(index); setNotice(''); }} style={[styles.weekDay, index === selectedWeekday && styles.weekDaySelected, day.checkedIn && styles.weekDayDone]}>
+        return <Pressable key={day.key} disabled={activeExercise !== null && index !== selectedWeekday} accessibilityRole="button" accessibilityLabel={`${weekdayTabLabels[index]}${day.checkedIn ? `, treino registrado: ${record?.workout_focus || 'sim'}` : ''}`} accessibilityState={{ selected: index === selectedWeekday }} onPress={() => { setSelectedWeekday(index); setNotice(''); }} style={[styles.weekDay, index === selectedWeekday && styles.weekDaySelected, day.checkedIn && styles.weekDayDone, activeExercise !== null && index !== selectedWeekday && styles.disabled]}>
           <Text style={[styles.weekLabel, index === selectedWeekday && styles.selectedText]}>{weekdayTabLabels[index]}</Text>
           <View style={[styles.dayMark, day.checkedIn && styles.dayMarkDone, day.isToday && styles.dayMarkToday]}><Text style={[styles.dayMarkText, day.checkedIn && styles.dayMarkTextDone]}>{day.checkedIn ? '✓' : String(Number(day.key.slice(-2)))}</Text></View>
           <Text numberOfLines={2} style={[styles.dayFocus, index === selectedWeekday && styles.selectedText]}>{dayGroups || (day.isToday ? 'Hoje' : '—')}</Text>
@@ -122,7 +192,7 @@ export function TrainingWeekBuilder() {
       <Text style={styles.groupLabel}>GRUPOS MUSCULARES <Text style={styles.groupHint}>· até 3 · toque para ver a biblioteca</Text></Text>
       {loadingPlans ? <Text style={styles.helper}>Carregando sua semana…</Text> : <View style={styles.groupGrid}>{trainingMuscleGroups.map((group) => {
         const selected = selectedGroups.includes(group);
-        return <Pressable key={group} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} onPress={() => toggleGroup(group)} style={[styles.groupPill, selected && styles.groupPillSelected]}><Text style={[styles.groupText, selected && styles.groupTextSelected]}>{selected ? '✓  ' : '+  '}{group}</Text></Pressable>;
+        return <Pressable key={group} disabled={activeExercise !== null} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} onPress={() => toggleGroup(group)} style={[styles.groupPill, selected && styles.groupPillSelected, activeExercise !== null && styles.disabled]}><Text style={[styles.groupText, selected && styles.groupTextSelected]}>{selected ? '✓  ' : '+  '}{group}</Text></Pressable>;
       })}</View>}
       {selectedGroups.length > 0 ? <View style={styles.libraryShortcuts}><Text style={styles.libraryShortcutLabel}>BIBLIOTECA COMPLETA</Text>{selectedGroups.map((group) => <Pressable key={group} accessibilityRole="button" accessibilityLabel={`Abrir biblioteca de exercícios de ${group}`} onPress={() => { setOpenLibraryGroup(group); setActiveDemo(null); }} style={styles.libraryShortcut}><Text style={styles.libraryShortcutText}>{group} ↗</Text></Pressable>)}</View> : null}
 
@@ -132,24 +202,52 @@ export function TrainingWeekBuilder() {
       {exercises.length > 0 ? <View style={styles.routine}>
         <View style={styles.routineHeading}><View><Text style={styles.eyebrow}>SÉRIE SUGERIDA</Text><Text style={styles.routineTitle}>{selectedGroups.join(' + ')}</Text></View><Text style={styles.exerciseCount}>{exercises.length} exercícios</Text></View>
         <Text style={styles.helper}>Volumes usuais por sessão: até 4 exercícios para grupos grandes e 2 para grupos menores. As sugestões podem variar conforme sua experiência.</Text>
+        {activeExercise && !timerVisible ? <Pressable accessibilityRole="button" onPress={() => setTimerVisible(true)} style={styles.resumeTimer}>
+          <View style={styles.resumeIcon}><Text style={styles.resumeIconText}>⏱</Text></View>
+          <View style={styles.resumeCopy}><Text style={styles.resumeTitle}>Cronômetro em andamento</Text><Text style={styles.resumeSubtitle}>{activeExercise.name} · toque para voltar</Text></View>
+          <Text style={styles.resumeArrow}>›</Text>
+        </Pressable> : null}
         {exercises.map((exercise, index) => {
-          const shown = selectedVariations[index] ? { ...exercise, ...selectedVariations[index] } : exercise;
-          const key = `${selectedWeekday}-${index}-${shown.name}`;
+          const shown = getShownExercise(index, exercise);
+          const key = exerciseKey(index, shown.name);
           const open = activeDemo === key;
           const alternativesOpen = openVariations === index;
-          return <View key={`${selectedWeekday}-${index}`} style={styles.exerciseRow}>
-            <View style={styles.exerciseNumber}><Text style={styles.exerciseNumberText}>{String(index + 1).padStart(2, '0')}</Text></View>
-            <View style={styles.exerciseInfo}>
-              <View style={styles.exerciseTitleRow}><Text style={styles.exerciseName}>{shown.name}</Text>{shown.region ? <Text style={styles.regionBadge}>{shown.region}</Text> : null}</View>
-              <Text style={styles.exerciseFocus}>Alvo principal: {shown.focus}</Text>
-              <Text style={styles.exerciseMeta}>{exercise.sets} séries · {exercise.reps} repetições · pausa {exercise.rest}</Text>
-              {exercise.alternatives?.length ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: alternativesOpen }} onPress={() => setOpenVariations(alternativesOpen ? null : index)} style={styles.swapButton}><Text style={styles.swapText}>{alternativesOpen ? 'Fechar opções' : '↻  Trocar por exercício equivalente'}</Text></Pressable> : null}
-              {alternativesOpen ? <View style={styles.variationList}><Text style={styles.variationHeading}>Opções para o mesmo grupo muscular</Text>{exercise.alternatives?.map((option) => <Pressable key={option.name} accessibilityRole="button" onPress={() => { setSelectedVariations((current) => ({ ...current, [index]: option })); setOpenVariations(null); setActiveDemo(null); }} style={styles.variationOption}><View style={styles.variationCopy}><Text style={styles.variationName}>{option.name}</Text><Text style={styles.variationFocus}>{option.region ? `${option.region} · ` : ''}{option.focus}</Text></View><Text style={styles.variationArrow}>›</Text></Pressable>)}</View> : null}
-              {shown.demoVideoId ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setActiveDemo(open ? null : key)} style={styles.videoButton}><Text style={styles.videoButtonText}>{open ? 'Fechar vídeo' : '▶  Ver exercício'}</Text></Pressable> : <Text style={styles.helper}>Demonstração específica em revisão; não associamos outro movimento a este exercício.</Text>}
-              {open && shown.demoVideoId ? <ExerciseDemo videoId={shown.demoVideoId} title={`Demonstração: ${shown.name} · ${shown.focus}`} /> : null}
+          const done = Math.min(completedSets[key] || 0, exercise.sets);
+          const isComplete = done >= exercise.sets;
+          const thisExerciseActive = activeExercise?.key === key;
+          const anotherExerciseActive = activeExercise !== null && !thisExerciseActive;
+          return <View key={`${selectedDay.key}-${index}-${shown.name}`} style={[styles.exerciseCard, isComplete && styles.exerciseCardDone]}>
+            <View style={styles.exerciseCardTop}>
+              <View style={[styles.exerciseNumber, isComplete && styles.exerciseNumberDone]}><Text style={[styles.exerciseNumberText, isComplete && styles.exerciseNumberTextDone]}>{isComplete ? '✓' : String(index + 1).padStart(2, '0')}</Text></View>
+              <View style={styles.exerciseInfo}>
+                <View style={styles.exerciseTitleRow}><Text style={styles.exerciseName}>{shown.name}</Text>{shown.region ? <Text style={styles.regionBadge}>{shown.region}</Text> : null}<Text style={[styles.setStatus, isComplete && styles.setStatusDone]}>{isComplete ? 'Concluído' : `${done}/${exercise.sets} séries`}</Text></View>
+                <Text style={styles.exerciseFocus}>Alvo principal: {shown.focus}</Text>
+                <Text style={styles.exerciseMeta}>{exercise.sets} séries · {exercise.reps} repetições · descanso {exercise.rest}</Text>
+                <View style={styles.setProgressTrack}><View style={[styles.setProgressFill, { width: `${Math.round((done / exercise.sets) * 100)}%` }]} /></View>
+              </View>
             </View>
+            {exercise.alternatives?.length ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: alternativesOpen }} disabled={activeExercise !== null} onPress={() => setOpenVariations(alternativesOpen ? null : index)} style={[styles.swapButton, activeExercise !== null && styles.disabled]}><Text style={styles.swapText}>{alternativesOpen ? 'Fechar opções' : '↻  Trocar por exercício equivalente'}</Text></Pressable> : null}
+            {alternativesOpen ? <View style={styles.variationList}><Text style={styles.variationHeading}>Opções para o mesmo grupo muscular</Text>{exercise.alternatives?.map((option) => <Pressable key={option.name} accessibilityRole="button" disabled={activeExercise !== null} onPress={() => { setSelectedVariations((current) => ({ ...current, [index]: option })); setOpenVariations(null); setActiveDemo(null); }} style={styles.variationOption}><View style={styles.variationCopy}><Text style={styles.variationName}>{option.name}</Text><Text style={styles.variationFocus}>{option.region ? `${option.region} · ` : ''}{option.focus}</Text></View><Text style={styles.variationArrow}>›</Text></Pressable>)}</View> : null}
+            <View style={styles.exerciseActions}>
+              {shown.demoVideoId ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setActiveDemo(open ? null : key)} style={styles.videoButton}><Text style={styles.videoButtonText}>{open ? 'Fechar vídeo' : '▶  Ver vídeo'}</Text></Pressable> : null}
+              <Pressable accessibilityRole="button" disabled={!progressReady || isComplete || anotherExerciseActive} onPress={() => {
+                if (thisExerciseActive) { setTimerVisible(true); return; }
+                setActiveExercise({ key, index, name: shown.name, focus: shown.focus, reps: exercise.reps, sets: exercise.sets, rest: exercise.rest, demoVideoId: shown.demoVideoId });
+                setTimerVisible(true);
+              }} style={[styles.startExerciseButton, (!progressReady || isComplete || anotherExerciseActive) && styles.disabled]}>
+                <Text style={styles.startExerciseText}>{!progressReady ? 'Carregando séries…' : isComplete ? '✓ Exercício concluído' : thisExerciseActive ? 'Retomar cronômetro' : anotherExerciseActive ? 'Conclua a série em andamento' : 'Começar exercício  →'}</Text>
+              </Pressable>
+            </View>
+            {open && shown.demoVideoId ? <View style={styles.demoPreview}><ExerciseDemo videoId={shown.demoVideoId} title={`Demonstração: ${shown.name} · ${shown.focus}`} /></View> : null}
+            {!shown.demoVideoId ? <Text style={styles.helper}>Demonstração específica em revisão; não associamos outro movimento a este exercício.</Text> : null}
           </View>;
         })}
+        {allExercisesComplete ? <View style={styles.finishCard}>
+          <View style={styles.finishIcon}><Text style={styles.finishIconText}>✓</Text></View>
+          <Text style={styles.finishTitle}>Treino concluído!</Text>
+          <Text style={styles.finishCopy}>{completedToday ? 'Seu treino de hoje já está registrado.' : 'Todas as séries foram feitas. Registre o treino no seu histórico.'}</Text>
+          {!completedToday ? <Pressable accessibilityRole="button" disabled={finishingWorkout || !selectedDay.isToday} onPress={() => void registerWorkout()} style={[styles.finishButton, (finishingWorkout || !selectedDay.isToday) && styles.disabled]}><Text style={styles.finishButtonText}>{finishingWorkout ? 'Registrando…' : selectedDay.isToday ? 'Registrar treino de hoje' : 'Selecione hoje para registrar'}</Text></Pressable> : null}
+        </View> : null}
       </View> : <View style={styles.emptyRoutine}><Text style={styles.emptyIcon}>✦</Text><Text style={styles.emptyTitle}>Sua série aparece aqui</Text><Text style={styles.helper}>Escolha peito e tríceps, costas e bíceps, pernas ou qualquer combinação que faça sentido para você.</Text></View>}
 
       {openLibraryGroup ? <View style={styles.library}>
@@ -174,6 +272,18 @@ export function TrainingWeekBuilder() {
       </View> : null}
 
       <Text style={styles.footerHint}>Sua semana começa na segunda. Na próxima segunda, o painel abre uma nova semana; o histórico antigo continua salvo no seu progresso.</Text>
+      {activeExercise ? <WorkoutTimerModal
+        key={activeExercise.key}
+        visible={timerVisible}
+        exercise={activeExercise}
+        exerciseNumber={activeExercise.index + 1}
+        exerciseCount={exercises.length}
+        nextExerciseName={exercises[activeExercise.index + 1] ? getShownExercise(activeExercise.index + 1, exercises[activeExercise.index + 1]).name : undefined}
+        initialCompletedSets={completedSets[activeExercise.key] || 0}
+        onSetProgress={(count) => setCompletedSets((current) => ({ ...current, [activeExercise.key]: count }))}
+        onDismiss={() => setTimerVisible(false)}
+        onFinishExercise={() => { setTimerVisible(false); setActiveExercise(null); }}
+      /> : null}
     </View>
   );
 }
@@ -185,24 +295,27 @@ const styles = StyleSheet.create({
   title: { color: theme.colors.ink, fontSize: 22, fontWeight: '900', marginTop: 5 },
   countPill: { minWidth: 61, height: 46, paddingHorizontal: 10, borderRadius: 15, backgroundColor: theme.colors.purpleSoft, alignItems: 'center', justifyContent: 'center' },
   countText: { color: theme.colors.orange, fontSize: 19, fontWeight: '900' }, countMuted: { color: theme.colors.purpleMuted, fontSize: 12 },
-  description: { color: theme.colors.muted, fontSize: 11, lineHeight: 17, marginTop: 8 },
+  description: { color: theme.colors.muted, fontSize: 12, lineHeight: 18, marginTop: 8 },
   weekRow: { flexDirection: 'row', gap: 5, marginTop: 17, marginBottom: 19 },
   weekDay: { flex: 1, minWidth: 0, minHeight: 93, alignItems: 'center', justifyContent: 'flex-start', borderRadius: 14, paddingVertical: 8, paddingHorizontal: 3, backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.line },
   weekDaySelected: { backgroundColor: theme.colors.purpleSurface, borderColor: theme.colors.purple }, weekDayDone: { borderBottomColor: theme.colors.orange, borderBottomWidth: 2 },
-  weekLabel: { color: theme.colors.muted, fontSize: 9, fontWeight: '900' }, selectedText: { color: theme.colors.white },
+  weekLabel: { color: theme.colors.muted, fontSize: 10, fontWeight: '900' }, selectedText: { color: theme.colors.white },
   dayMark: { width: 27, height: 27, borderRadius: 14, marginTop: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.surface }, dayMarkDone: { backgroundColor: theme.colors.orange }, dayMarkToday: { borderWidth: 1, borderColor: theme.colors.orange }, dayMarkText: { color: theme.colors.muted, fontSize: 9, fontWeight: '900' }, dayMarkTextDone: { color: theme.colors.dark },
-  dayFocus: { color: theme.colors.muted, fontSize: 7, lineHeight: 9, textAlign: 'center', marginTop: 5, minHeight: 18 },
+  dayFocus: { color: theme.colors.muted, fontSize: 8, lineHeight: 10, textAlign: 'center', marginTop: 5, minHeight: 20 },
   dayHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderTopWidth: 1, borderTopColor: theme.colors.line, paddingTop: 15 },
   selectedDayTitle: { color: theme.colors.ink, fontSize: 16, fontWeight: '900' }, selectedDayCopy: { color: theme.colors.muted, fontSize: 10, marginTop: 4 },
   statusDot: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: theme.colors.purpleSoft }, statusDone: { backgroundColor: theme.colors.orangeSoft }, statusText: { color: theme.colors.orangeDeep, fontSize: 8, fontWeight: '900', letterSpacing: .6 },
   groupLabel: { color: theme.colors.ink, fontSize: 10, fontWeight: '900', letterSpacing: .8, marginTop: 19, marginBottom: 9 }, groupHint: { color: theme.colors.muted, fontWeight: '600' },
-  groupGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 }, groupPill: { minHeight: 36, justifyContent: 'center', borderRadius: 12, paddingHorizontal: 11, backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.line }, groupPillSelected: { backgroundColor: theme.colors.purpleSurface, borderColor: theme.colors.purple }, groupText: { color: theme.colors.muted, fontSize: 9, fontWeight: '800' }, groupTextSelected: { color: theme.colors.orange },
+  groupGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 }, groupPill: { minHeight: 38, justifyContent: 'center', borderRadius: 12, paddingHorizontal: 11, backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.line }, groupPillSelected: { backgroundColor: theme.colors.pinkSoft, borderColor: theme.colors.pink }, groupText: { color: theme.colors.muted, fontSize: 10, fontWeight: '800' }, groupTextSelected: { color: theme.colors.pinkMuted },
   actionRow: { flexDirection: 'row', gap: 8, marginTop: 15 }, savePlanFull: { flex: 1 }, savePlanButton: { minHeight: 43, minWidth: 105, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.purpleSoft, paddingHorizontal: 13 }, savePlanText: { color: theme.colors.purpleMuted, fontSize: 10, fontWeight: '900' }, checkinButton: { flex: 1, minHeight: 43, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.orange, paddingHorizontal: 13 }, checkinText: { color: theme.colors.dark, fontSize: 10, fontWeight: '900', textAlign: 'center' }, disabled: { opacity: .55 }, notice: { color: theme.colors.orangeDeep, fontSize: 10, fontWeight: '700', marginTop: 10 },
-  routine: { marginTop: 22, borderTopWidth: 1, borderTopColor: theme.colors.line, paddingTop: 16 }, routineHeading: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10 }, routineTitle: { color: theme.colors.ink, fontSize: 16, fontWeight: '900', marginTop: 5 }, exerciseCount: { color: theme.colors.purpleMuted, fontSize: 9, fontWeight: '800', marginBottom: 2 }, helper: { color: theme.colors.muted, fontSize: 9, lineHeight: 14, marginTop: 8 },
-  exerciseRow: { flexDirection: 'row', gap: 11, borderBottomWidth: 1, borderBottomColor: theme.colors.line, paddingVertical: 12 }, exerciseNumber: { width: 33, height: 33, borderRadius: 11, backgroundColor: theme.colors.orangeSoft, alignItems: 'center', justifyContent: 'center', marginTop: 2 }, exerciseNumberText: { color: theme.colors.orangeDeep, fontSize: 10, fontWeight: '900' }, exerciseInfo: { flex: 1 }, exerciseTitleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }, exerciseName: { color: theme.colors.ink, fontSize: 12, fontWeight: '900' }, regionBadge: { color: theme.colors.purpleMuted, backgroundColor: theme.colors.purpleSoft, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 4, fontSize: 8, fontWeight: '900' }, exerciseFocus: { color: theme.colors.muted, fontSize: 9, marginTop: 3 }, exerciseMeta: { color: theme.colors.orangeDeep, fontSize: 9, fontWeight: '800', marginTop: 5 }, videoButton: { alignSelf: 'flex-start', marginTop: 7, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: theme.colors.purpleSoft }, videoButtonText: { color: theme.colors.purpleMuted, fontSize: 9, fontWeight: '900' },
+  routine: { marginTop: 22, borderTopWidth: 1, borderTopColor: theme.colors.line, paddingTop: 16 }, routineHeading: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10 }, routineTitle: { color: theme.colors.ink, fontSize: 16, fontWeight: '900', marginTop: 5 }, exerciseCount: { color: theme.colors.pinkMuted, fontSize: 10, fontWeight: '800', marginBottom: 2 }, helper: { color: theme.colors.muted, fontSize: 10, lineHeight: 15, marginTop: 8 },
+  exerciseRow: { flexDirection: 'row', gap: 11, borderBottomWidth: 1, borderBottomColor: theme.colors.line, paddingVertical: 12 }, exerciseNumber: { width: 33, height: 33, borderRadius: 11, backgroundColor: theme.colors.orangeSoft, alignItems: 'center', justifyContent: 'center', marginTop: 2 }, exerciseNumberText: { color: theme.colors.orangeDeep, fontSize: 10, fontWeight: '900' }, exerciseInfo: { flex: 1 }, regionBadge: { color: theme.colors.purpleMuted, backgroundColor: theme.colors.purpleSoft, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 4, fontSize: 8, fontWeight: '900' }, videoButton: { minHeight: 39, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 11, borderRadius: 12, backgroundColor: theme.colors.purpleSoft }, videoButtonText: { color: theme.colors.purpleMuted, fontSize: 10, fontWeight: '900' },
+  resumeTimer: { flexDirection: 'row', alignItems: 'center', gap: 11, minHeight: 66, paddingHorizontal: 12, marginTop: 15, borderRadius: 16, backgroundColor: theme.colors.pinkSoft, borderWidth: 1, borderColor: theme.colors.pink }, resumeIcon: { width: 38, height: 38, borderRadius: 13, backgroundColor: theme.colors.pink, alignItems: 'center', justifyContent: 'center' }, resumeIconText: { color: '#27101F', fontSize: 17 }, resumeCopy: { flex: 1 }, resumeTitle: { color: theme.colors.ink, fontSize: 11, fontWeight: '900' }, resumeSubtitle: { color: theme.colors.pinkMuted, fontSize: 10, marginTop: 4 }, resumeArrow: { color: theme.colors.pinkMuted, fontSize: 24, fontWeight: '800' },
+  exerciseCard: { marginTop: 12, padding: 13, borderRadius: 18, backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.line }, exerciseCardDone: { borderColor: theme.colors.pinkSurface }, exerciseCardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 }, exerciseNumberDone: { backgroundColor: theme.colors.pink }, exerciseNumberTextDone: { color: '#27101F' }, exerciseTitleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }, exerciseName: { color: theme.colors.ink, fontSize: 14, lineHeight: 19, fontWeight: '900' }, setStatus: { color: theme.colors.pinkMuted, fontSize: 9, fontWeight: '900', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 9, backgroundColor: theme.colors.pinkSoft }, setStatusDone: { color: theme.colors.pinkMuted, backgroundColor: theme.colors.pinkSurface }, exerciseFocus: { color: theme.colors.muted, fontSize: 10, lineHeight: 15, marginTop: 4 }, exerciseMeta: { color: theme.colors.pinkDeep, fontSize: 10, lineHeight: 15, fontWeight: '800', marginTop: 6 }, setProgressTrack: { height: 4, borderRadius: 3, backgroundColor: theme.colors.surfaceRaised, marginTop: 9, overflow: 'hidden' }, setProgressFill: { height: '100%', borderRadius: 3, backgroundColor: theme.colors.pink },
+  exerciseActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 11 }, startExerciseButton: { flex: 1, minHeight: 43, minWidth: 150, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: theme.colors.pink, paddingHorizontal: 10 }, startExerciseText: { color: '#27101F', fontSize: 10, textAlign: 'center', fontWeight: '900' }, demoPreview: { overflow: 'hidden', borderRadius: 13, marginTop: 9 },
+  finishCard: { alignItems: 'center', padding: 18, marginTop: 18, borderRadius: 19, backgroundColor: theme.colors.pinkSoft, borderWidth: 1, borderColor: theme.colors.pinkSurface }, finishIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.pink }, finishIconText: { color: '#27101F', fontSize: 18, fontWeight: '900' }, finishTitle: { color: theme.colors.ink, fontSize: 17, fontWeight: '900', marginTop: 9 }, finishCopy: { color: theme.colors.pinkMuted, fontSize: 10, lineHeight: 15, textAlign: 'center', marginTop: 5 }, finishButton: { minHeight: 43, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: theme.colors.pink, marginTop: 13 }, finishButtonText: { color: '#27101F', fontSize: 10, fontWeight: '900', textAlign: 'center', paddingHorizontal: 8 },
   libraryShortcuts: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 11 }, libraryShortcutLabel: { color: theme.colors.muted, fontSize: 8, fontWeight: '900', letterSpacing: .5 }, libraryShortcut: { paddingHorizontal: 9, paddingVertical: 6, borderRadius: 9, backgroundColor: theme.colors.purpleSoft }, libraryShortcutText: { color: theme.colors.purpleMuted, fontSize: 8, fontWeight: '900' },
   library: { marginTop: 21, borderTopWidth: 1, borderTopColor: theme.colors.line, paddingTop: 16 }, libraryHeading: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10 }, libraryClose: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.line }, libraryCloseText: { color: theme.colors.purpleMuted, fontSize: 9, fontWeight: '900' }, libraryExercise: { borderBottomWidth: 1, borderBottomColor: theme.colors.line, paddingVertical: 12 }, libraryGroupTabs: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 12 }, libraryGroupTab: { paddingHorizontal: 9, paddingVertical: 7, borderRadius: 9, backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.line }, libraryGroupTabSelected: { backgroundColor: theme.colors.purpleSurface, borderColor: theme.colors.purple }, libraryGroupTabText: { color: theme.colors.muted, fontSize: 8, fontWeight: '800' }, libraryGroupTabTextSelected: { color: theme.colors.orange }, chestMap: { marginTop: 13, padding: 13, borderRadius: 15, backgroundColor: theme.colors.dark }, chestMapTitle: { color: theme.colors.white, fontSize: 12, fontWeight: '900' }, chestMapRows: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 9 }, chestMapTag: { color: theme.colors.orange, backgroundColor: '#362342', borderRadius: 9, paddingHorizontal: 8, paddingVertical: 6, fontSize: 8, fontWeight: '900' }, chestMapCopy: { color: '#C3B7CC', fontSize: 9, lineHeight: 14, marginTop: 8 },
   swapButton: { alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, borderWidth: 1, borderColor: theme.colors.purple, backgroundColor: theme.colors.background }, swapText: { color: theme.colors.purpleMuted, fontSize: 9, fontWeight: '900' }, variationList: { marginTop: 8, padding: 10, borderRadius: 12, backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.line }, variationHeading: { color: theme.colors.muted, fontSize: 8, fontWeight: '800', marginBottom: 5 }, variationOption: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9, borderTopWidth: 1, borderTopColor: theme.colors.line }, variationCopy: { flex: 1 }, variationName: { color: theme.colors.ink, fontSize: 10, fontWeight: '900' }, variationFocus: { color: theme.colors.muted, fontSize: 8, marginTop: 2 }, variationArrow: { color: theme.colors.orange, fontSize: 17, fontWeight: '900' },
-  emptyRoutine: { marginTop: 20, padding: 17, borderRadius: 17, backgroundColor: theme.colors.background, alignItems: 'center' }, emptyIcon: { color: theme.colors.orange, fontSize: 20 }, emptyTitle: { color: theme.colors.ink, fontSize: 13, fontWeight: '900', marginTop: 6 }, footerHint: { color: theme.colors.muted, fontSize: 9, lineHeight: 14, marginTop: 18 },
+  emptyRoutine: { marginTop: 20, padding: 17, borderRadius: 17, backgroundColor: theme.colors.background, alignItems: 'center' }, emptyIcon: { color: theme.colors.pink, fontSize: 20 }, emptyTitle: { color: theme.colors.ink, fontSize: 14, fontWeight: '900', marginTop: 6 }, footerHint: { color: theme.colors.muted, fontSize: 10, lineHeight: 15, marginTop: 18 },
 });
-

@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
   top: { minHeight: 55, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: theme.colors.line, marginBottom: 32 },
   topNote: { color: theme.colors.muted, fontSize: 9, letterSpacing: 1.3, fontWeight: '800' },
   intro: { marginBottom: 25 },
-  eyebrow: { color: theme.colors.orangeDeep, fontSize: 10, letterSpacing: 1.4, fontWeight: '900', marginBottom: 8 },
+  eyebrow: { color: theme.colors.pinkDeep, fontSize: 10, letterSpacing: 1.4, fontWeight: '900', marginBottom: 8 },
   title: { color: theme.colors.ink, fontSize: 31, lineHeight: 37, letterSpacing: -0.8, fontWeight: '900' },
   description: { color: theme.colors.muted, fontSize: 14, lineHeight: 21, marginTop: 7 },
 });
