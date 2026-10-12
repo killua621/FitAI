@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { getAdultProteinGuidance } from '@/features/health/fitnessGuidance';
 import { supabase } from '@/lib/supabase';
 import { theme } from '@/theme';
 import tacoFoods from '@/features/nutrition/tacoFoods.json';
@@ -25,6 +26,7 @@ const round = (value: number) => Math.round(value * 100) / 100;
 
 export function FoodPlanner() {
   const { profile } = useAuth();
+  const proteinGoal = getAdultProteinGuidance(profile || {});
   const [mealType, setMealType] = useState('Café');
   const [search, setSearch] = useState('');
   const [food, setFood] = useState<TacoFood | null>(null);
@@ -122,9 +124,9 @@ export function FoodPlanner() {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.eyebrow}>PLANEJADOR COM A TACO</Text>
-      <Text style={styles.title}>Monte sua alimentação</Text>
-      <Text style={styles.description}>Pesquise um alimento, escolha a versão e informe a quantidade em gramas. Os nutrientes são calculados automaticamente.</Text>
+      <Text style={styles.eyebrow}>SEU REGISTRO DE HOJE</Text>
+      <Text style={styles.title}>Diário alimentar</Text>
+      <Text style={styles.description}>Anote o que comeu, ajuste a porção e acompanhe os nutrientes somados ao longo do dia.</Text>
 
       <View style={styles.mealTypes}>{mealTypes.map((item) => <Pressable key={item} accessibilityRole="tab" accessibilityState={{ selected: mealType === item }} onPress={() => setMealType(item)} style={[styles.mealPill, mealType === item && styles.mealPillActive]}><Text style={[styles.mealText, mealType === item && styles.mealTextActive]}>{item}</Text></Pressable>)}</View>
 
@@ -159,6 +161,12 @@ export function FoodPlanner() {
         <View><Text style={styles.summaryEyebrow}>TOTAL REGISTRADO HOJE</Text><Text style={styles.summaryTitle}>{kcal(totals.calories)} kcal</Text></View>
         <Text style={styles.summaryMacros}>C {number(totals.carbs)} g　P {number(totals.protein)} g　G {number(totals.fat)} g</Text>
       </View>
+
+      {proteinGoal ? <View style={styles.proteinProgressCard}>
+        <View style={styles.proteinProgressTop}><View><Text style={styles.summaryEyebrow}>PROTEÍNA REGISTRADA</Text><Text style={styles.proteinProgressTitle}>{number(totals.protein)} / {proteinGoal.referenceG} g</Text></View><Text style={styles.proteinProgressPercent}>{Math.min(100, Math.round((totals.protein / proteinGoal.referenceG) * 100))}%</Text></View>
+        <View style={styles.proteinTrack}><View style={[styles.proteinFill, { width: `${Math.min(100, Math.round((totals.protein / proteinGoal.referenceG) * 100))}%` }]} /></View>
+        <Text style={styles.proteinProgressNote}>Referência educativa para {profile?.goal?.toLocaleLowerCase('pt-BR') || 'adulto ativo'}; não precisa acertar o número exato todos os dias.</Text>
+      </View> : <Text style={styles.proteinUnavailable}>{profile?.age && profile.age < 18 ? 'O app não cria metas de proteína para menores de 18 anos.' : 'Complete idade e peso no perfil para ver uma referência de proteína.'}</Text>}
 
       <Text style={styles.loggedHeading}>{mealType} · alimentos de hoje</Text>
       {loadingLogs ? <Text style={styles.statusText}>Carregando seus registros…</Text> : null}
@@ -216,6 +224,14 @@ const styles = StyleSheet.create({
   summaryEyebrow: { color: theme.colors.orange, fontSize: 7, letterSpacing: 0.9, fontWeight: '900' },
   summaryTitle: { color: theme.colors.white, fontSize: 19, fontWeight: '900', marginTop: 3 },
   summaryMacros: { color: '#E2D9E6', fontSize: 9, fontWeight: '700' },
+  proteinProgressCard: { borderRadius: 15, backgroundColor: theme.colors.pinkSoft, padding: 13, marginTop: 9 },
+  proteinProgressTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  proteinProgressTitle: { color: theme.colors.ink, fontSize: 18, fontWeight: '900', marginTop: 4 },
+  proteinProgressPercent: { color: theme.colors.pinkMuted, fontSize: 14, fontWeight: '900' },
+  proteinTrack: { height: 7, borderRadius: 7, backgroundColor: theme.colors.surface, overflow: 'hidden', marginTop: 9 },
+  proteinFill: { height: '100%', borderRadius: 7, backgroundColor: theme.colors.pink },
+  proteinProgressNote: { color: theme.colors.pinkMuted, fontSize: 9, lineHeight: 14, marginTop: 7 },
+  proteinUnavailable: { color: theme.colors.muted, fontSize: 9, lineHeight: 14, marginTop: 8 },
   loggedHeading: { color: theme.colors.ink, fontSize: 12, fontWeight: '900', marginTop: 17, marginBottom: 8 },
   statusText: { color: theme.colors.muted, fontSize: 10, paddingVertical: 8 },
   errorText: { color: theme.colors.orange, fontSize: 10, paddingVertical: 8 },
@@ -230,3 +246,4 @@ const styles = StyleSheet.create({
   sourceText: { color: theme.colors.purpleMuted, fontSize: 9, fontWeight: '800' },
   disclaimer: { color: theme.colors.muted, fontSize: 8, lineHeight: 13, marginTop: 5 },
 });
+

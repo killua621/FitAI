@@ -5,6 +5,7 @@ import { AppTabBar } from '@/components/AppTabBar';
 import { PageIntro } from '@/components/PageIntro';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { calculateAdultBmi, getAdultProteinGuidance, getNutritionGuidance } from '@/features/health/fitnessGuidance';
 import { nutritionSources } from '@/features/nutrition/nutritionContent';
 import { theme } from '@/theme';
 
@@ -20,6 +21,9 @@ export default function NutritionScreen() {
   const [sourceOpen, setSourceOpen] = useState(false);
   const goal = profile?.goal || 'Ganhar massa muscular';
   const focus = focusByGoal[goal] || focusByGoal['Ganhar massa muscular'];
+  const bmi = calculateAdultBmi(profile || {});
+  const protein = getAdultProteinGuidance(profile || {});
+  const guidance = getNutritionGuidance(profile || {});
 
   const openProfessionalWhatsApp = async () => {
     try { await Linking.openURL('https://wa.me/5521980147390'); }
@@ -32,7 +36,16 @@ export default function NutritionScreen() {
 
   return (
     <Screen scroll footer={<AppTabBar active="/nutrition" />} style={styles.screen}>
-      <PageIntro eyebrow="COMER BEM, DO SEU JEITO" title="Alimentação" description="Acompanhe suas escolhas e monte refeições sem deixar a tela carregada." />
+      <PageIntro eyebrow="COMER BEM, DO SEU JEITO" title="Sua alimentação" description="Veja referências ajustadas ao seu perfil, registre o que comeu e encontre ideias simples para suas refeições." />
+
+      <View style={styles.metricsRow}>
+        <View style={styles.metricCard}><Text style={styles.metricEyebrow}>IMC ESTIMADO</Text><Text style={styles.metricValue}>{bmi ? bmi.value.toFixed(1).replace('.', ',') : '—'}</Text><Text style={styles.metricLabel}>{bmi?.label || (profile?.age && profile.age < 18 ? 'Não se aplica a menores de 18' : 'Complete idade, peso e altura no perfil')}</Text></View>
+        <View style={styles.metricCard}><Text style={styles.metricEyebrow}>PROTEÍNA · DIA</Text><Text style={styles.metricValue}>{protein ? `${protein.referenceG} g` : '—'}</Text><Text style={styles.metricLabel}>{protein ? `referência · faixa ${protein.minG}–${protein.maxG} g` : 'Complete seu perfil para estimar'}</Text></View>
+      </View>
+
+      {protein ? <View style={styles.methodCard}><Text style={styles.methodTitle}>Como chegamos a esse número</Text><Text style={styles.methodCopy}>Usamos peso e objetivo para escolher uma referência dentro da faixa estudada de 1,4 a 2,0 g/kg para adultos ativos. Para {goal.toLocaleLowerCase()}, o ponto de referência é {protein.factor.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} g/kg/dia. {protein.note}</Text></View> : <View style={styles.methodCard}><Text style={styles.methodTitle}>{guidance.title}</Text><Text style={styles.methodCopy}>{guidance.ageNote || 'Preencha idade, peso e altura no seu perfil para ver estas referências. O app não calcula metas de dieta para menores de 18 anos.'}</Text></View>}
+      {bmi ? <Text style={styles.bmiNote}>{bmi.note}</Text> : null}
+      <View style={styles.profileActions}><Pressable accessibilityRole="button" onPress={() => router.push('/profile')} style={styles.profileAction}><Text style={styles.profileActionText}>Editar altura e objetivo</Text></Pressable><Pressable accessibilityRole="button" onPress={() => router.push('/progress')} style={styles.profileAction}><Text style={styles.profileActionText}>Atualizar peso</Text></Pressable></View>
 
       <View style={styles.goalCard}>
         <View style={styles.goalTop}><Text style={styles.eyebrow}>SUA META</Text><View style={styles.goalBadge}><Text style={styles.goalBadgeText}>{goal}</Text></View></View>
@@ -42,7 +55,7 @@ export default function NutritionScreen() {
 
       <Pressable accessibilityRole="button" onPress={() => router.push('/meal-planner' as Href)} style={({ pressed }) => [styles.plannerCard, pressed && styles.plannerPressed]}>
         <View style={styles.plannerIcon}><Text style={styles.plannerGlyph}>＋</Text></View>
-        <View style={styles.plannerCopy}><Text style={styles.eyebrow}>PLANEJE SUAS REFEIÇÕES</Text><Text style={styles.plannerTitle}>Montar alimentação</Text><Text style={styles.plannerHint}>Pesquise alimentos na TACO, ajuste as porções e acompanhe os nutrientes.</Text></View>
+        <View style={styles.plannerCopy}><Text style={styles.eyebrow}>DIÁRIO E DICAS</Text><Text style={styles.plannerTitle}>Registrar alimentos e ver ideias</Text><Text style={styles.plannerHint}>Acompanhe proteína e outros nutrientes do dia; consulte sugestões que respeitam suas alergias cadastradas.</Text></View>
         <View style={styles.plannerArrow}><Text style={styles.plannerArrowText}>↗</Text></View>
       </Pressable>
 
@@ -65,6 +78,18 @@ export default function NutritionScreen() {
 
 const styles = StyleSheet.create({
   screen: { paddingTop: 7 },
+  metricsRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  metricCard: { flex: 1, minHeight: 120, justifyContent: 'center', borderRadius: 19, backgroundColor: theme.colors.dark, padding: 14 },
+  metricEyebrow: { color: theme.colors.orangeDeep, fontSize: 8, letterSpacing: 1, fontWeight: '900' },
+  metricValue: { color: theme.colors.white, fontSize: 25, fontWeight: '900', marginTop: 8 },
+  metricLabel: { color: '#C5B9CB', fontSize: 9, lineHeight: 14, marginTop: 5 },
+  methodCard: { borderRadius: 16, backgroundColor: theme.colors.purpleSoft, padding: 14, marginBottom: 8 },
+  methodTitle: { color: theme.colors.ink, fontSize: 11, fontWeight: '900' },
+  methodCopy: { color: theme.colors.purpleMuted, fontSize: 9, lineHeight: 14, marginTop: 5 },
+  bmiNote: { color: theme.colors.muted, fontSize: 9, lineHeight: 14, marginBottom: 12 },
+  profileActions: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  profileAction: { flex: 1, minHeight: 37, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, paddingHorizontal: 8 },
+  profileActionText: { color: theme.colors.purpleMuted, fontSize: 9, fontWeight: '800', textAlign: 'center' },
   goalCard: { borderRadius: 23, backgroundColor: theme.colors.dark, padding: 19, marginBottom: 13 },
   goalTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
   eyebrow: { color: theme.colors.orangeDeep, fontSize: 9, letterSpacing: 1.2, fontWeight: '900' },
@@ -78,3 +103,4 @@ const styles = StyleSheet.create({
   expertCard: { flexDirection: 'row', alignItems: 'center', gap: 11, borderRadius: 19, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 15, marginBottom: 13 }, expertIcon: { width: 39, height: 39, borderRadius: 13, backgroundColor: '#25D366', alignItems: 'center', justifyContent: 'center' }, expertIconText: { color: '#FFFFFF', fontSize: 17, fontWeight: '900' }, expertCopy: { flex: 1 }, expertTitle: { color: theme.colors.ink, fontSize: 15, fontWeight: '900', marginTop: 5 }, expertSubtitle: { color: theme.colors.muted, fontSize: 9, marginTop: 3 }, expertArrow: { color: theme.colors.orange, fontSize: 18, fontWeight: '900' },
   sourcesCard: { borderRadius: 19, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 15, marginBottom: 14 }, sourcesToggle: { minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, sourcesTitle: { color: theme.colors.ink, fontSize: 13, fontWeight: '900', marginTop: 5 }, sourcesArrow: { color: theme.colors.orange, fontSize: 22, fontWeight: '700', paddingHorizontal: 5 }, sourcesCopy: { color: theme.colors.muted, fontSize: 9, lineHeight: 14, marginTop: 8 }, sourceLink: { borderTopWidth: 1, borderTopColor: theme.colors.line, marginTop: 9, paddingTop: 9 }, sourceText: { color: theme.colors.purpleMuted, fontSize: 9, fontWeight: '800' },
 });
+

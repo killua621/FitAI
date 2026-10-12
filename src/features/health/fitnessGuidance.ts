@@ -51,6 +51,38 @@ export function calculateAdultBmi(profile: FitnessProfile): BmiScreening | null 
   return { value, label: 'IMC em faixa que merece avaliação individual', note: 'IMC não diagnostica gordura corporal nem saúde. Use-o como triagem e procure orientação individual para metas de peso.', belowAdultRange: false };
 }
 
+export type ProteinGuidance = {
+  minG: number;
+  maxG: number;
+  referenceG: number;
+  factor: number;
+  note: string;
+};
+
+/** Educational protein range for adults who train; it is not a clinical diet prescription. */
+export function getAdultProteinGuidance(profile: FitnessProfile): ProteinGuidance | null {
+  const { age, weight_kg: weightKg, goal } = profile;
+  if (!age || age < 18 || !weightKg || weightKg < 20 || weightKg > 500) return null;
+
+  const referenceFactor = goal === 'Perder gordura' ? 1.8
+    : goal === 'Melhorar condicionamento' ? 1.4
+      : 1.6;
+  const bmi = calculateAdultBmi(profile);
+  const note = age >= 18 && bmi?.belowAdultRange && goal === 'Perder gordura'
+    ? 'Seu IMC estimado está abaixo da faixa adulta. Não use uma estratégia para perder peso sem conversar com um profissional.'
+    : bmi && bmi.value >= 30
+      ? 'Como o IMC é uma triagem e o peso atual pode superestimar essa conta, leve essa faixa a um nutricionista para individualizar.'
+      : 'Faixa educativa para adultos fisicamente ativos; necessidades variam com saúde, treino e alimentação. Não é uma prescrição.';
+
+  return {
+    minG: Math.round(weightKg * 1.4),
+    maxG: Math.round(weightKg * 2.0),
+    referenceG: Math.round(weightKg * referenceFactor),
+    factor: referenceFactor,
+    note,
+  };
+}
+
 /** Optional first milestone for motivation, not a clinical target or rate of change. */
 export function suggestWeightMilestone(profile: FitnessProfile): number | null {
   const { age, height_cm: heightCm, weight_kg: weightKg, goal } = profile;
@@ -154,3 +186,4 @@ export function getNutritionGuidance(profile: FitnessProfile): NutritionGuidance
       };
   }
 }
+
