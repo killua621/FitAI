@@ -74,7 +74,7 @@ export default function ProfileScreen() {
           ['automatic', automaticEmphasisLabel], ['balanced', 'Corpo todo equilibrado'], ['lower_body', 'Mais pernas e glúteos'], ['upper_body', 'Mais tronco e braços'],
         ].map(([value, label]) => <Pressable key={value} accessibilityRole="radio" accessibilityState={{ checked: trainingEmphasis === value }} onPress={() => setTrainingEmphasis(value as typeof trainingEmphasis)} style={[styles.choice, trainingEmphasis === value && { backgroundColor: theme.colors.pinkSoft, borderColor: theme.colors.pink }]}><Text style={[styles.choiceText, trainingEmphasis === value && { color: theme.colors.pinkMuted }]}>{label}</Text></Pressable>)}</View>
       </View>
-      <Button variant="pink" title={saving ? 'Salvando…' : 'Salvar perfil'}> onPress={save} disabled={saving} style={styles.saveButton} />
+      <Button variant="pink" title={saving ? 'Salvando…' : 'Salvar perfil'} onPress={save} disabled={saving} style={styles.saveButton} />
 
       <Text style={styles.email}>{session?.user.email}</Text>
       <Button title="Sair da conta" variant="outline" onPress={async () => { try { await signOut(); router.replace('/'); } catch (error) { Alert.alert('Não foi possível sair', error instanceof Error ? error.message : 'Tente novamente.'); } }} style={styles.signOut} />
