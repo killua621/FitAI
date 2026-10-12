@@ -1,5 +1,6 @@
 import { PropsWithChildren, ReactNode } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, View, ViewStyle, useWindowDimensions } from 'react-native';
+import { ScrollView, StyleSheet, View, ViewStyle, useWindowDimensions } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { theme } from '@/theme';
 
@@ -7,12 +8,13 @@ type Props = PropsWithChildren<{ scroll?: boolean; style?: ViewStyle; footer?: R
 
 export function Screen({ children, scroll = false, style, footer }: Props) {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const wide = width >= 760;
   const contentStyle = [styles.content, wide ? styles.wideContent : styles.compactContent, style];
   const footerStyle = [styles.footer, wide ? styles.wideFooter : styles.compactFooter];
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <StatusBar style="light" />
       {scroll ? (
         <ScrollView contentContainerStyle={contentStyle} showsVerticalScrollIndicator={false}>
@@ -21,7 +23,7 @@ export function Screen({ children, scroll = false, style, footer }: Props) {
       ) : (
         <View style={contentStyle}>{children}</View>
       )}
-      {footer && <View style={footerStyle}>{footer}</View>}
+      {footer && <View style={[footerStyle, { paddingBottom: Math.max(insets.bottom, 8) }]}>{footer}</View>}
     </SafeAreaView>
   );
 }
@@ -35,3 +37,4 @@ const styles = StyleSheet.create({
   wideFooter: { maxWidth: 1160, paddingHorizontal: 38 },
   compactFooter: { paddingHorizontal: 22 },
 });
+
