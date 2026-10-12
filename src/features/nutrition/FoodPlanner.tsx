@@ -20,6 +20,7 @@ type FoodLog = {
 
 const mealTypes = ['Café', 'Almoço', 'Lanche', 'Jantar'];
 const fold = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+const searchableFoods = tacoFoods.map((item) => ({ item, normalizedDescription: fold(item.description) }));
 const number = (value: number | null | undefined) => value == null ? '—' : value > 0 && value < 0.05 ? 'Tr' : value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const kcal = (value: number | null | undefined) => value == null ? '—' : Math.round(value).toLocaleString('pt-BR');
 const round = (value: number) => Math.round(value * 100) / 100;
@@ -63,17 +64,16 @@ export function FoodPlanner() {
   }, [profile?.id]);
 
   const results = useMemo(() => {
-    const terms = fold(search.trim()).split(/\s+/).filter(Boolean);
+    const query = fold(search.trim());
+    const terms = query.split(/\s+/).filter(Boolean);
     if (!terms.length) return [];
-    return tacoFoods.filter((item) => {
-      const description = fold(item.description);
-      return terms.every((term) => description.includes(term));
-    }).sort((a, b) => {
-      const query = fold(search.trim());
-      const aStarts = fold(a.description).startsWith(query);
-      const bStarts = fold(b.description).startsWith(query);
-      return aStarts === bStarts ? a.id - b.id : aStarts ? -1 : 1;
-    }).slice(0, 12);
+    return searchableFoods.filter(({ normalizedDescription }) =>
+      terms.every((term) => normalizedDescription.includes(term)),
+    ).sort((a, b) => {
+      const aStarts = a.normalizedDescription.startsWith(query);
+      const bStarts = b.normalizedDescription.startsWith(query);
+      return aStarts === bStarts ? a.item.id - b.item.id : aStarts ? -1 : 1;
+    }).slice(0, 12).map(({ item }) => item);
   }, [search]);
 
   const grams = Number.parseFloat(gramsText.replace(',', '.'));
