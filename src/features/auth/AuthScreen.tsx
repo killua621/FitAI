@@ -36,6 +36,8 @@ export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [confirmationSentTo, setConfirmationSentTo] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -48,7 +50,7 @@ export default function AuthScreen() {
   const isPasswordEntry = isSignup || mode === 'updatePassword';
 
   const passwordChecks = [
-    { label: '12 caracteres', valid: password.length >= 12 },
+    { label: '8 caracteres', valid: password.length >= 8 },
     { label: 'letra maiúscula', valid: /[A-Z]/.test(password) },
     { label: 'letra minúscula', valid: /[a-z]/.test(password) },
     { label: 'número', valid: /\d/.test(password) },
@@ -112,7 +114,7 @@ export default function AuthScreen() {
       message.includes('password should') ||
       message.includes('password is too')
     ) {
-      return 'Essa senha não atende aos requisitos de segurança. Use 12 caracteres, maiúscula, minúscula, número e símbolo.';
+      return 'Essa senha não atende aos requisitos de segurança. Use 8 caracteres, maiúscula, minúscula, número e símbolo.';
     }
 
     if (message.includes('email address not authorized')) {
@@ -172,23 +174,14 @@ export default function AuthScreen() {
     const type = Array.isArray(rawType) ? rawType[0] : rawType;
     const requestedMode = Array.isArray(rawMode) ? rawMode[0] : rawMode;
 
-    // URL fragments are only available for web callbacks. Avoid touching
-    // browser URL APIs while this screen is mounted in the native app.
-    const hash =
-      Platform.OS === 'web' &&
-      typeof window !== 'undefined' &&
-      window.location
-        ? window.location.hash
-        : '';
+    const hash = typeof window !== 'undefined' && window.location ? window.location.hash : '';
 
-    const hashParams = hash
-      ? new URLSearchParams(hash.replace(/^#/, ''))
-      : null;
+    const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
 
-    const accessToken = hashParams?.get('access_token') ?? null;
-    const refreshToken = hashParams?.get('refresh_token') ?? null;
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
 
-    const callbackType = hashParams?.get('type') || type;
+    const callbackType = hashParams.get('type') || type;
 
     if (
       callbackProcessed.current ||
@@ -270,7 +263,7 @@ export default function AuthScreen() {
       setNotice({
         kind: 'error',
         message: isPasswordEntry
-          ? 'Sua senha precisa ter 12 caracteres, letra maiúscula, minúscula, número e símbolo.'
+          ? 'Sua senha precisa ter 8 caracteres, letra maiúscula, minúscula, número e símbolo.'
           : 'Digite sua senha para entrar.',
       });
 
@@ -512,21 +505,32 @@ export default function AuthScreen() {
                     {mode === 'updatePassword' ? 'Nova senha' : 'Senha'}
                   </Text>
 
-                  <TextInput
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder={
-                      isPasswordEntry
-                        ? 'Crie uma senha forte'
-                        : 'Digite sua senha'
-                    }
-                    placeholderTextColor="#A99BB1"
-                    secureTextEntry
-                    autoComplete={
-                      isPasswordEntry ? 'new-password' : 'password'
-                    }
-                    style={styles.input}
-                  />
+                  <View style={styles.passwordInputRow}>
+                    <TextInput
+                      value={password}
+                      onChangeText={setPassword}
+                      placeholder={
+                        isPasswordEntry
+                          ? 'Crie uma senha forte'
+                          : 'Digite sua senha'
+                      }
+                      placeholderTextColor="#A99BB1"
+                      secureTextEntry={!showPassword}
+                      autoComplete={
+                        isPasswordEntry ? 'new-password' : 'password'
+                      }
+                      style={[styles.input, styles.passwordInput]}
+                    />
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                      onPress={() => setShowPassword((visible) => !visible)}
+                      hitSlop={8}
+                      style={styles.passwordVisibilityButton}
+                    >
+                      <Text style={styles.passwordVisibilityText}>{showPassword ? 'Ocultar' : 'Mostrar'}</Text>
+                    </Pressable>
+                  </View>
 
                   {isPasswordEntry && (
                     <View style={styles.passwordRules}>
@@ -556,15 +560,26 @@ export default function AuthScreen() {
                     Confirme sua senha
                   </Text>
 
-                  <TextInput
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    placeholder="Digite a senha novamente"
-                    placeholderTextColor="#A99BB1"
-                    secureTextEntry
-                    autoComplete="new-password"
-                    style={styles.input}
-                  />
+                  <View style={styles.passwordInputRow}>
+                    <TextInput
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                      placeholder="Digite a senha novamente"
+                      placeholderTextColor="#A99BB1"
+                      secureTextEntry={!showConfirmPassword}
+                      autoComplete="new-password"
+                      style={[styles.input, styles.passwordInput]}
+                    />
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={showConfirmPassword ? 'Ocultar confirmação da senha' : 'Mostrar confirmação da senha'}
+                      onPress={() => setShowConfirmPassword((visible) => !visible)}
+                      hitSlop={8}
+                      style={styles.passwordVisibilityButton}
+                    >
+                      <Text style={styles.passwordVisibilityText}>{showConfirmPassword ? 'Ocultar' : 'Mostrar'}</Text>
+                    </Pressable>
+                  </View>
                 </>
               )}
 
@@ -770,6 +785,38 @@ const styles = StyleSheet.create({
     marginBottom: 17,
   },
 
+  passwordInputRow: {
+    height: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.line,
+    backgroundColor: theme.colors.background,
+    marginBottom: 17,
+    paddingRight: 14,
+  },
+
+  passwordInput: {
+    flex: 1,
+    height: '100%',
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    marginBottom: 0,
+  },
+
+  passwordVisibilityButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingLeft: 8,
+  },
+
+  passwordVisibilityText: {
+    color: theme.colors.purpleMuted,
+    fontWeight: '800',
+    fontSize: 11,
+  },
+
   passwordRules: {
     marginTop: -8,
     marginBottom: 17,
@@ -912,3 +959,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
+
