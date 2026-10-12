@@ -39,24 +39,24 @@ export default function NutritionScreen() {
       <PageIntro eyebrow="COMER BEM, DO SEU JEITO" title="Sua alimentação" description="Veja referências ajustadas ao seu perfil, registre o que comeu e encontre ideias simples para suas refeições." />
 
       <View style={styles.metricsRow}>
-        <View style={styles.metricCard}><Text style={styles.metricEyebrow}>IMC ESTIMADO</Text><Text style={styles.metricValue}>{bmi ? bmi.value.toFixed(1).replace('.', ',') : '—'}</Text><Text style={styles.metricLabel}>{bmi?.label || (profile?.age && profile.age < 18 ? 'Não se aplica a menores de 18' : 'Complete idade, peso e altura no perfil')}</Text></View>
-        <View style={styles.metricCard}><Text style={styles.metricEyebrow}>PROTEÍNA · DIA</Text><Text style={styles.metricValue}>{protein ? `${protein.referenceG} g` : '—'}</Text><Text style={styles.metricLabel}>{protein ? `referência · faixa ${protein.minG}–${protein.maxG} g` : 'Complete seu perfil para estimar'}</Text></View>
+        <View style={[styles.metricCard, { backgroundColor: '#241326', borderWidth: 1, borderColor: theme.colors.pinkSurface }]}><Text style={[styles.metricEyebrow, { color: theme.colors.pinkDeep }]}>IMC ESTIMADO</Text><Text style={[styles.metricValue, { color: theme.colors.pink }]}>{bmi ? bmi.value.toFixed(1).replace('.', ',') : '—'}</Text><Text style={styles.metricLabel}>{bmi?.label || (profile?.age && profile.age < 18 ? 'Não se aplica a menores de 18' : 'Complete idade, peso e altura no perfil')}</Text></View>
+        <View style={[styles.metricCard, { backgroundColor: '#241326', borderWidth: 1, borderColor: theme.colors.pinkSurface }]}><Text style={[styles.metricEyebrow, { color: theme.colors.pinkDeep }]}>PROTEÍNA · DIA</Text><Text style={[styles.metricValue, { color: theme.colors.pink }]}>{protein ? `${protein.referenceG} g` : '—'}</Text><Text style={styles.metricLabel}>{protein ? `referência · faixa ${protein.minG}–${protein.maxG} g` : 'Complete seu perfil para estimar'}</Text></View>
       </View>
 
-      {protein ? <View style={styles.methodCard}><Text style={styles.methodTitle}>Como chegamos a esse número</Text><Text style={styles.methodCopy}>Usamos peso e objetivo para escolher uma referência dentro da faixa estudada de 1,4 a 2,0 g/kg para adultos ativos. Para {goal.toLocaleLowerCase()}, o ponto de referência é {protein.factor.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} g/kg/dia. {protein.note}</Text></View> : <View style={styles.methodCard}><Text style={styles.methodTitle}>{guidance.title}</Text><Text style={styles.methodCopy}>{guidance.ageNote || 'Preencha idade, peso e altura no seu perfil para ver estas referências. O app não calcula metas de dieta para menores de 18 anos.'}</Text></View>}
+      {protein ? <View style={[styles.methodCard, { backgroundColor: theme.colors.pinkSoft }]}><Text style={styles.methodTitle}>Como chegamos a esse número</Text><Text style={[styles.methodCopy, { color: theme.colors.pinkMuted }]}>Usamos peso e objetivo para escolher uma referência dentro da faixa estudada de 1,4 a 2,0 g/kg para adultos ativos. Para {goal.toLocaleLowerCase()}, o ponto de referência é {protein.factor.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} g/kg/dia. {protein.note}</Text></View> : <View style={[styles.methodCard, { backgroundColor: theme.colors.pinkSoft }]}><Text style={styles.methodTitle}>{guidance.title}</Text><Text style={[styles.methodCopy, { color: theme.colors.pinkMuted }]}>{guidance.ageNote || 'Preencha idade, peso e altura no seu perfil para ver estas referências. O app não calcula metas de dieta para menores de 18 anos.'}</Text></View>}
       {bmi ? <Text style={styles.bmiNote}>{bmi.note}</Text> : null}
       <View style={styles.profileActions}><Pressable accessibilityRole="button" onPress={() => router.push('/profile')} style={styles.profileAction}><Text style={styles.profileActionText}>Editar altura e objetivo</Text></Pressable><Pressable accessibilityRole="button" onPress={() => router.push('/progress')} style={styles.profileAction}><Text style={styles.profileActionText}>Atualizar peso</Text></Pressable></View>
 
-      <View style={styles.goalCard}>
-        <View style={styles.goalTop}><Text style={styles.eyebrow}>SUA META</Text><View style={styles.goalBadge}><Text style={styles.goalBadgeText}>{goal}</Text></View></View>
+      <View style={[styles.goalCard, { borderWidth: 1, borderColor: theme.colors.pinkSurface }]}>
+        <View style={styles.goalTop}><Text style={[styles.eyebrow, { color: theme.colors.pinkDeep }]}>SUA META</Text><View style={styles.goalBadge}><Text style={[styles.goalBadgeText, { color: theme.colors.pink }]}>{goal}</Text></View></View>
         <Text style={styles.goalTitle}>{focus.title}</Text>
         <Text style={styles.copy}>{focus.body}</Text>
       </View>
 
-      <Pressable accessibilityRole="button" onPress={() => router.push('/meal-planner' as Href)} style={({ pressed }) => [styles.plannerCard, pressed && styles.plannerPressed]}>
-        <View style={styles.plannerIcon}><Text style={styles.plannerGlyph}>＋</Text></View>
-        <View style={styles.plannerCopy}><Text style={styles.eyebrow}>DIÁRIO E DICAS</Text><Text style={styles.plannerTitle}>Registrar alimentos e ver ideias</Text><Text style={styles.plannerHint}>Acompanhe proteína e outros nutrientes do dia; consulte sugestões que respeitam suas alergias cadastradas.</Text></View>
-        <View style={styles.plannerArrow}><Text style={styles.plannerArrowText}>↗</Text></View>
+      <Pressable accessibilityRole="button" onPress={() => router.push('/meal-planner' as Href)} style={({ pressed }) => [styles.plannerCard, { borderColor: theme.colors.pink, backgroundColor: '#2A1530' }, pressed && styles.plannerPressed]}>
+        <View style={[styles.plannerIcon, { backgroundColor: theme.colors.pink }]}><Text style={[styles.plannerGlyph, { color: '#27101F' }]}>＋</Text></View>
+        <View style={styles.plannerCopy}><Text style={[styles.eyebrow, { color: theme.colors.pinkDeep }]}>DIÁRIO E DICAS</Text><Text style={styles.plannerTitle}>Registrar alimentos e ver ideias</Text><Text style={styles.plannerHint}>Acompanhe proteína e outros nutrientes do dia; consulte sugestões que respeitam suas alergias cadastradas.</Text></View>
+        <View style={[styles.plannerArrow, { backgroundColor: theme.colors.pinkSoft }]}><Text style={[styles.plannerArrowText, { color: theme.colors.pink }]}>↗</Text></View>
       </Pressable>
 
       <View style={styles.safetyCard}>
@@ -65,11 +65,11 @@ export default function NutritionScreen() {
       </View>
 
       <Pressable accessibilityRole="link" accessibilityLabel="Conversar com a nutricionista Cinthia Firmino pelo WhatsApp" onPress={() => void openProfessionalWhatsApp()} style={styles.expertCard}>
-        <View style={styles.expertIcon}><Text style={styles.expertIconText}>◉</Text></View><View style={styles.expertCopy}><Text style={styles.eyebrow}>ACOMPANHAMENTO PROFISSIONAL</Text><Text style={styles.expertTitle}>Cinthia Firmino</Text><Text style={styles.expertSubtitle}>Nutricionista · +55 21 98014-7390</Text></View><Text style={styles.expertArrow}>↗</Text>
+        <View style={styles.expertIcon}><Text style={styles.expertIconText}>◉</Text></View><View style={styles.expertCopy}><Text style={[styles.eyebrow, { color: theme.colors.pinkDeep }]}>ACOMPANHAMENTO PROFISSIONAL</Text><Text style={styles.expertTitle}>Cinthia Firmino</Text><Text style={styles.expertSubtitle}>Nutricionista · +55 21 98014-7390</Text></View><Text style={styles.expertArrow}>↗</Text>
       </Pressable>
 
       <View style={styles.sourcesCard}>
-        <Pressable accessibilityRole="button" accessibilityState={{ expanded: sourceOpen }} onPress={() => setSourceOpen((open) => !open)} style={styles.sourcesToggle}><View><Text style={styles.eyebrow}>NOSSOS PRINCÍPIOS</Text><Text style={styles.sourcesTitle}>Sugestões simples e flexíveis</Text></View><Text style={styles.sourcesArrow}>{sourceOpen ? '−' : '+'}</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityState={{ expanded: sourceOpen }} onPress={() => setSourceOpen((open) => !open)} style={styles.sourcesToggle}><View><Text style={[styles.eyebrow, { color: theme.colors.pinkDeep }]}>NOSSOS PRINCÍPIOS</Text><Text style={styles.sourcesTitle}>Sugestões simples e flexíveis</Text></View><Text style={styles.sourcesArrow}>{sourceOpen ? '−' : '+'}</Text></Pressable>
         {sourceOpen ? <><Text style={styles.sourcesCopy}>Priorizamos variedade e alimentos in natura ou minimamente processados, como recomenda o Guia Alimentar brasileiro. As sugestões são educativas e não substituem um plano individual.</Text>{nutritionSources.map((source) => <Pressable key={source.url} accessibilityRole="link" onPress={() => void openSource(source.url)} style={styles.sourceLink}><Text style={styles.sourceText}>{source.label}  ↗</Text></Pressable>)}</> : null}
       </View>
     </Screen>

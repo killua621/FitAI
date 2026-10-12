@@ -53,10 +53,10 @@ export default function ProfileScreen() {
   return (
     <Screen scroll footer={<AppTabBar active="/profile" />} style={styles.screen}>
       <View style={styles.top}><Brand /><Text style={styles.topLabel}>SEU PERFIL</Text></View>
-      <View style={styles.profileIntro}><View style={styles.avatar}><Text style={styles.avatarText}>{(profile?.display_name || 'A')[0].toUpperCase()}</Text></View><Text style={styles.eyebrow}>SEU ESPAÇO, SEU RITMO</Text><Text style={styles.title}>{profile?.display_name || 'Seu perfil'}</Text><Text style={styles.description}>Mantenha seus dados atualizados para deixar as referências de alimentação e treino mais úteis.</Text></View>
+      <View style={styles.profileIntro}><View style={[styles.avatar, { backgroundColor: theme.colors.pinkSoft }]}><Text style={[styles.avatarText, { color: theme.colors.pink }]}>{(profile?.display_name || 'A')[0].toUpperCase()}</Text></View><Text style={[styles.eyebrow, { color: theme.colors.pinkDeep }]}>SEU ESPAÇO, SEU RITMO</Text><Text style={styles.title}>{profile?.display_name || 'Seu perfil'}</Text><Text style={styles.description}>Mantenha seus dados atualizados para deixar as referências de alimentação e treino mais úteis.</Text></View>
 
       <View style={styles.card}>
-        <Text style={styles.cardEyebrow}>INFORMAÇÕES PESSOAIS</Text>
+        <Text style={[styles.cardEyebrow, { color: theme.colors.pinkDeep }]}>INFORMAÇÕES PESSOAIS</Text>
         <View style={styles.infoGrid}>
           <View style={styles.infoItem}><Text style={styles.infoLabel}>NOME</Text><Text style={styles.infoValue}>{profile?.display_name || '—'}</Text></View>
           <View style={styles.infoItem}><Text style={styles.infoLabel}>IDADE</Text><Text style={styles.infoValue}>{profile?.age ? `${profile.age} anos` : '—'}</Text></View>
@@ -69,12 +69,12 @@ export default function ProfileScreen() {
           <TextInput value={dateOfBirth} onChangeText={(value) => setDateOfBirth(formatBrazilianDateInput(value))} placeholder="DD/MM/AAAA" placeholderTextColor={theme.colors.muted} keyboardType="numeric" maxLength={10} style={styles.input} />
           <Text style={styles.helper}>Informe uma vez para sua idade acompanhar seus aniversários.</Text>
         </>}
-        <Text style={styles.label}>Objetivo principal</Text><View style={styles.choices}>{goals.map((item) => <Pressable key={item} accessibilityRole="radio" accessibilityState={{ checked: goal === item }} onPress={() => setGoal(item)} style={[styles.choice, goal === item && styles.choiceActive]}><Text style={[styles.choiceText, goal === item && styles.choiceTextActive]}>{item}</Text></Pressable>)}</View>
+        <Text style={styles.label}>Objetivo principal</Text><View style={styles.choices}>{goals.map((item) => <Pressable key={item} accessibilityRole="radio" accessibilityState={{ checked: goal === item }} onPress={() => setGoal(item)} style={[styles.choice, goal === item && { backgroundColor: theme.colors.pinkSoft, borderColor: theme.colors.pink }]}><Text style={[styles.choiceText, goal === item && { color: theme.colors.pinkMuted }]}>{item}</Text></Pressable>)}</View>
         <Text style={styles.label}>Ênfase do treino</Text><Text style={styles.helper}>O automático usa o foco inicial do seu perfil, como preferência ajustável. Você pode personalizar a divisão quando quiser.</Text><View style={styles.choices}>{[
           ['automatic', automaticEmphasisLabel], ['balanced', 'Corpo todo equilibrado'], ['lower_body', 'Mais pernas e glúteos'], ['upper_body', 'Mais tronco e braços'],
-        ].map(([value, label]) => <Pressable key={value} accessibilityRole="radio" accessibilityState={{ checked: trainingEmphasis === value }} onPress={() => setTrainingEmphasis(value as typeof trainingEmphasis)} style={[styles.choice, trainingEmphasis === value && styles.choiceActive]}><Text style={[styles.choiceText, trainingEmphasis === value && styles.choiceTextActive]}>{label}</Text></Pressable>)}</View>
+        ].map(([value, label]) => <Pressable key={value} accessibilityRole="radio" accessibilityState={{ checked: trainingEmphasis === value }} onPress={() => setTrainingEmphasis(value as typeof trainingEmphasis)} style={[styles.choice, trainingEmphasis === value && { backgroundColor: theme.colors.pinkSoft, borderColor: theme.colors.pink }]}><Text style={[styles.choiceText, trainingEmphasis === value && { color: theme.colors.pinkMuted }]}>{label}</Text></Pressable>)}</View>
       </View>
-      <Button title={saving ? 'Salvando…' : 'Salvar perfil'} onPress={save} disabled={saving} style={styles.saveButton} />
+      <Button variant="pink" title={saving ? 'Salvando…' : 'Salvar perfil'> onPress={save} disabled={saving} style={styles.saveButton} />
 
       <Text style={styles.email}>{session?.user.email}</Text>
       <Button title="Sair da conta" variant="outline" onPress={async () => { try { await signOut(); router.replace('/'); } catch (error) { Alert.alert('Não foi possível sair', error instanceof Error ? error.message : 'Tente novamente.'); } }} style={styles.signOut} />

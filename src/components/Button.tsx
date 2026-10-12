@@ -4,7 +4,7 @@ import { theme } from '@/theme';
 type Props = {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'dark' | 'outline';
+  variant?: 'primary' | 'dark' | 'outline' | 'pink';
   disabled?: boolean;
   style?: ViewStyle;
 };
@@ -12,6 +12,7 @@ type Props = {
 export function Button({ title, onPress, variant = 'primary', disabled, style }: Props) {
   const dark = variant === 'dark';
   const outline = variant === 'outline';
+  const pink = variant === 'pink';
   return (
     <Pressable
       accessibilityRole="button"
@@ -21,6 +22,7 @@ export function Button({ title, onPress, variant = 'primary', disabled, style }:
         styles.button,
         dark && styles.dark,
         outline && styles.outline,
+        pink && styles.pink,
         disabled && styles.disabled,
         pressed && styles.pressed,
         style,
@@ -38,6 +40,7 @@ const styles = StyleSheet.create({
   button: { minHeight: 56, borderRadius: 18, backgroundColor: theme.colors.orange, paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', boxShadow: '0px 5px 12px rgba(255,123,63,0.18)' },
   dark: { backgroundColor: theme.colors.dark },
   outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.colors.line },
+  pink: { backgroundColor: theme.colors.pink, boxShadow: '0px 5px 12px rgba(255,93,187,0.2)' },
   content: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, maxWidth: '100%' },
   label: { color: theme.colors.dark, fontSize: 14, letterSpacing: 0.1, fontWeight: '900', flexShrink: 1, textAlign: 'center' },
   darkLabel: { color: theme.colors.white },
