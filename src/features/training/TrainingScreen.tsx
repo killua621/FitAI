@@ -3,17 +3,13 @@ import { AppTabBar } from '@/components/AppTabBar';
 import { PageIntro } from '@/components/PageIntro';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { getCurrentWeekCheckins } from '@/features/training/checkins';
 import { TrainingWeekBuilder } from '@/features/training/TrainingWeekBuilder';
 import { buildTrainingProgram } from '@/features/training/programGenerator';
 import { theme } from '@/theme';
 
 export default function TrainingScreen() {
-  const { profile, workoutCheckinDates } = useAuth();
+  const { profile } = useAuth();
   const program = buildTrainingProgram(profile || {});
-  const week = getCurrentWeekCheckins(workoutCheckinDates);
-  const goalDays = Math.max(1, profile?.training_days || 3);
-  const weeklyProgress = Math.min(100, Math.round((week.count / goalDays) * 100));
 
   const contactTrainer = async () => {
     try { await Linking.openURL('https://wa.me/5521969682162'); }
@@ -23,13 +19,6 @@ export default function TrainingScreen() {
   return (
     <Screen scroll footer={<AppTabBar active="/workout" />} style={styles.screen}>
       <PageIntro eyebrow="MOVIMENTO NO SEU RITMO" title="Seu treino, dia a dia" description="Monte sua semana, explore a biblioteca por músculo e confira demonstrações 3D nos exercícios com vídeo verificado." />
-
-      <View style={styles.weekSummary}>
-        <View style={styles.summaryTop}><View><Text style={styles.eyebrow}>SEU RITMO NESTA SEMANA</Text><Text style={styles.summaryTitle}>{week.count} de {goalDays} treinos</Text></View><View style={styles.summaryIcon}><Text style={styles.summaryIconText}>✦</Text></View></View>
-        <Text style={styles.summaryCopy}>Cada dia ganha sua própria combinação de músculos e exercícios.</Text>
-        <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${weeklyProgress}%` }]} /></View>
-        <Text style={styles.summaryFoot}>Comece por hoje; sua divisão pode mudar ao longo da semana.</Text>
-      </View>
 
       <TrainingWeekBuilder />
 
@@ -47,16 +36,7 @@ export default function TrainingScreen() {
 
 const styles = StyleSheet.create({
   screen: { paddingTop: 7 },
-  weekSummary: { borderRadius: 24, backgroundColor: theme.colors.dark, padding: 20, marginBottom: 17 },
-  summaryTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   eyebrow: { color: theme.colors.orangeDeep, fontSize: 9, letterSpacing: 1.2, fontWeight: '900' },
-  summaryTitle: { color: theme.colors.white, fontSize: 22, fontWeight: '900', marginTop: 6 },
-  summaryIcon: { width: 43, height: 43, borderRadius: 15, backgroundColor: '#362342', alignItems: 'center', justifyContent: 'center' },
-  summaryIconText: { color: theme.colors.orange, fontSize: 22 },
-  summaryCopy: { color: '#C3B7CC', fontSize: 11, lineHeight: 17, marginTop: 8 },
-  progressTrack: { height: 7, borderRadius: 4, backgroundColor: '#392C43', marginTop: 15, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 4, backgroundColor: theme.colors.orange },
-  summaryFoot: { color: '#A999B1', fontSize: 9, marginTop: 8 },
   guidanceCard: { borderRadius: 21, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 17, marginBottom: 11 },
   cardIcon: { width: 37, height: 37, borderRadius: 13, backgroundColor: theme.colors.purpleSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 13 },
   cardIconText: { color: theme.colors.orange, fontSize: 19, fontWeight: '900' },
@@ -70,4 +50,5 @@ const styles = StyleSheet.create({
   whatsappGlyph: { color: '#FFFFFF', fontSize: 14, fontWeight: '900' }, whatsappText: { color: '#092313', fontSize: 10, fontWeight: '900' }, whatsappArrow: { color: '#092313', fontSize: 14, fontWeight: '900' },
   safety: { color: theme.colors.muted, fontSize: 9, lineHeight: 14, marginTop: 14, marginBottom: 12 },
 });
+
 
