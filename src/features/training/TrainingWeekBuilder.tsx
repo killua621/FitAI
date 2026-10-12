@@ -13,6 +13,12 @@ function normalizeGroupList(value: string | null | undefined): TrainingMuscleGro
   return trainingMuscleGroups.filter((group) => value.split(/\s*\+\s*/).includes(group));
 }
 
+type ActiveWorkoutExercise = WorkoutTimerExercise & {
+  index: number;
+  exerciseCount: number;
+  nextExerciseName?: string;
+};
+
 export function TrainingWeekBuilder() {
   const { profile, workoutCheckinDetails, trainingWeekPlans, refreshTrainingWeekPlans, saveTrainingWeekPlan, addWorkoutCheckin } = useAuth();
   const [selectedWeekday, setSelectedWeekday] = useState((new Date().getDay() + 6) % 7);
@@ -25,7 +31,7 @@ export function TrainingWeekBuilder() {
   const [openLibraryGroup, setOpenLibraryGroup] = useState<TrainingMuscleGroup | null>(null);
   const [activeDemo, setActiveDemo] = useState<string | null>(null);
   const [completedSets, setCompletedSets] = useState<Record<string, number>>({});
-  const [activeExercise, setActiveExercise] = useState<(WorkoutTimerExercise & { index: number }) | null>(null);
+  const [activeExercise, setActiveExercise] = useState<ActiveWorkoutExercise | null>(null);
   const [timerVisible, setTimerVisible] = useState(false);
   const [finishingWorkout, setFinishingWorkout] = useState(false);
   const [notice, setNotice] = useState('');
@@ -36,7 +42,7 @@ export function TrainingWeekBuilder() {
   const savedCheckin = workoutCheckinDetails.find((entry) => entry.checkin_date === selectedDay.key);
   const completedToday = Boolean(savedCheckin);
   const isFutureDay = selectedDay.key > todayKey;
-  const exercises = useMemo(() => buildCustomTrainingExercises(selectedGroups, profile?.experience_level), [selectedGroups, profile?.experience_level]);
+  const exercises = useMemo(() => buildCustomTrainingExercises(selectedGroups), [selectedGroups]);
   const libraryExercises = useMemo(() => openLibraryGroup ? getExerciseLibrary(openLibraryGroup) : [], [openLibraryGroup]);
   const workoutProgressKey = profile?.id && selectedGroups.length
     ? `scholzfit:workout-progress:${profile.id}:${selectedDay.key}:${selectedGroups.join('-')}`
@@ -201,7 +207,7 @@ export function TrainingWeekBuilder() {
 
       {exercises.length > 0 ? <View style={styles.routine}>
         <View style={styles.routineHeading}><View><Text style={styles.eyebrow}>SÉRIE SUGERIDA</Text><Text style={styles.routineTitle}>{selectedGroups.join(' + ')}</Text></View><Text style={styles.exerciseCount}>{exercises.length} exercícios</Text></View>
-        <Text style={styles.helper}>Volumes usuais por sessão: até 4 exercícios para grupos grandes e 2 para grupos menores. As sugestões podem variar conforme sua experiência.</Text>
+        <Text style={styles.helper}>Peito, costas, pernas, glúteos e abdômen: 3 séries. Ombros, braços e outros grupos menores: 2. Descanso de 1:30.</Text>
         {activeExercise && !timerVisible ? <Pressable accessibilityRole="button" onPress={() => setTimerVisible(true)} style={styles.resumeTimer}>
           <View style={styles.resumeIcon}><Text style={styles.resumeIconText}>⏱</Text></View>
           <View style={styles.resumeCopy}><Text style={styles.resumeTitle}>Cronômetro em andamento</Text><Text style={styles.resumeSubtitle}>{activeExercise.name} · toque para voltar</Text></View>
@@ -232,7 +238,7 @@ export function TrainingWeekBuilder() {
               {shown.demoVideoId ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setActiveDemo(open ? null : key)} style={styles.videoButton}><Text style={styles.videoButtonText}>{open ? 'Fechar vídeo' : '▶  Ver vídeo'}</Text></Pressable> : null}
               <Pressable accessibilityRole="button" disabled={!progressReady || isComplete || anotherExerciseActive} onPress={() => {
                 if (thisExerciseActive) { setTimerVisible(true); return; }
-                setActiveExercise({ key, index, name: shown.name, focus: shown.focus, reps: exercise.reps, sets: exercise.sets, rest: exercise.rest, demoVideoId: shown.demoVideoId });
+                setActiveExercise({ key, index, exerciseCount: exercises.length, nextExerciseName: exercises[index + 1] ? getShownExercise(index + 1, exercises[index + 1]).name : undefined, name: shown.name, focus: shown.focus, reps: exercise.reps, sets: exercise.sets, rest: exercise.rest, demoVideoId: shown.demoVideoId });
                 setTimerVisible(true);
               }} style={[styles.startExerciseButton, (!progressReady || isComplete || anotherExerciseActive) && styles.disabled]}>
                 <Text style={styles.startExerciseText}>{!progressReady ? 'Carregando séries…' : isComplete ? '✓ Exercício concluído' : thisExerciseActive ? 'Retomar cronômetro' : anotherExerciseActive ? 'Conclua a série em andamento' : 'Começar exercício  →'}</Text>
@@ -262,10 +268,25 @@ export function TrainingWeekBuilder() {
         {libraryExercises.map((exercise, index) => {
           const key = `library-${openLibraryGroup}-${index}-${exercise.name}`;
           const open = activeDemo === key;
+          const done = Math.min(completedSets[key] || 0, exercise.sets);
+          const isComplete = done >= exercise.sets;
+          const thisExerciseActive = activeExercise?.key === key;
+          const anotherExerciseActive = activeExercise !== null && !thisExerciseActive;
           return <View key={key} style={styles.libraryExercise}>
             <View style={styles.exerciseTitleRow}><Text style={styles.exerciseName}>{exercise.name}</Text>{exercise.region ? <Text style={styles.regionBadge}>{exercise.region}</Text> : null}</View>
             <Text style={styles.exerciseFocus}>Alvo principal: {exercise.focus}</Text>
+            <Text style={styles.exerciseMeta}>{exercise.sets} séries · {exercise.reps} repetições · descanso {exercise.rest}</Text>
+            <Text style={styles.exerciseMeta}>{done}/{exercise.sets} séries concluídas</Text>
+            <View style={styles.setProgressTrack}><View style={[styles.setProgressFill, { width: `${Math.round((done / exercise.sets) * 100)}%` }]} /></View>
+            <View style={styles.exerciseActions}>
             {exercise.demoVideoId ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setActiveDemo(open ? null : key)} style={styles.videoButton}><Text style={styles.videoButtonText}>{open ? 'Fechar vídeo' : '▶  Ver demonstração 3D'}</Text></Pressable> : <Text style={styles.helper}>Demonstração específica em revisão; não associamos outro movimento a este exercício.</Text>}
+            <Pressable accessibilityRole="button" disabled={!progressReady || isComplete || anotherExerciseActive} onPress={() => {
+              setActiveExercise({ key, index, exerciseCount: libraryExercises.length, nextExerciseName: libraryExercises[index + 1]?.name, name: exercise.name, focus: exercise.focus, reps: exercise.reps, sets: exercise.sets, rest: exercise.rest, demoVideoId: exercise.demoVideoId });
+              setTimerVisible(true);
+            }} style={[styles.startExerciseButton, (!progressReady || isComplete || anotherExerciseActive) && styles.disabled]}>
+              <Text style={styles.startExerciseText}>{!progressReady ? 'Carregando séries…' : isComplete ? '✓ Exercício concluído' : thisExerciseActive ? 'Retomar cronômetro' : anotherExerciseActive ? 'Conclua a série em andamento' : 'Iniciar exercício  →'}</Text>
+            </Pressable>
+            </View>
             {open && exercise.demoVideoId ? <ExerciseDemo videoId={exercise.demoVideoId} title={`Demonstração: ${exercise.name} · ${exercise.focus}`} /> : null}
           </View>;
         })}
@@ -277,8 +298,8 @@ export function TrainingWeekBuilder() {
         visible={timerVisible}
         exercise={activeExercise}
         exerciseNumber={activeExercise.index + 1}
-        exerciseCount={exercises.length}
-        nextExerciseName={exercises[activeExercise.index + 1] ? getShownExercise(activeExercise.index + 1, exercises[activeExercise.index + 1]).name : undefined}
+        exerciseCount={activeExercise.exerciseCount}
+        nextExerciseName={activeExercise.nextExerciseName}
         initialCompletedSets={completedSets[activeExercise.key] || 0}
         onSetProgress={(count) => setCompletedSets((current) => ({ ...current, [activeExercise.key]: count }))}
         onDismiss={() => setTimerVisible(false)}
