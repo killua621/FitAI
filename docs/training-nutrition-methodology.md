@@ -13,8 +13,8 @@ Revisado em 2026-10-01. Esta versão dá orientação educativa geral a adultos 
 
 ## Como os treinos variam
 
-- A rotina é gerada a partir do objetivo, experiência e frequência selecionada (2 a 6 sessões). As opções variam de corpo todo A/B ou A/B/C a divisões superior/inferior e empurrar/puxar/pernas; cada sessão contém exercícios diferentes.
-- Quem está começando recebe 2 séries por exercício; as outras faixas recebem 3 como ponto inicial. Os exercícios usam faixas moderadas de repetições, carga escolhida pela própria pessoa e descanso de 90–120 segundos nos movimentos principais.
+- A rotina é gerada a partir do objetivo e da frequência selecionada (2 a 6 sessões). As opções variam de corpo todo A/B ou A/B/C a divisões superior/inferior e empurrar/puxar/pernas; cada sessão contém exercícios diferentes.
+- O padrão do app usa 3 séries para grupos grandes e 2 para ombros, braços e outros grupos menores. Os exercícios usam faixas moderadas de repetições, carga escolhida pela própria pessoa e 90 segundos de descanso entre séries.
 - A instrução de esforço é terminar a série ainda conseguindo cerca de 2–3 repetições com técnica. Ao atingir o topo da faixa com controle em todas as séries, pode-se aumentar a carga gradualmente.
 - Ganho de massa não é sinônimo de poucas repetições e carga máxima. Cargas variadas podem produzir hipertrofia; consistência e volume semanal progressivo são mais úteis que falhar em toda série.
 - O app mantém atividade aeróbica como opção de saúde. Para adultos, a OMS recomenda 150–300 minutos moderados ou 75–150 vigorosos na semana, e fortalecimento dos principais grupos musculares em pelo menos 2 dias. Pessoas iniciantes devem aumentar a atividade gradualmente.
