@@ -47,6 +47,10 @@ export const mealIdeas: Record<string, MealIdea[]> = {
 
 export const nutritionSources = [
   { label: 'Guia Alimentar para a População Brasileira · Ministério da Saúde', url: 'https://bvsms.saude.gov.br/bvs/publicacoes/guia_alimentar_populacao_brasileira_2ed.pdf' },
+  { label: 'Proteína e exercício · International Society of Sports Nutrition', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC5477153/' },
+  { label: 'Meta-análise de proteína e treino de força · Morton et al., 2018', url: 'https://pubmed.ncbi.nlm.nih.gov/28698222/' },
+  { label: 'Classificação de IMC adulto · Organização Mundial da Saúde', url: 'https://www.who.int/docs/default-source/nutritionlibrary/events/9789241505529-eng.pdf' },
   { label: 'Rotulagem de alergênicos · Anvisa', url: 'https://www.gov.br/anvisa/pt-br/centraisdeconteudo/publicacoes/alimentos/perguntas-e-respostas-arquivos/rotulagem-de-alergenicos.pdf' },
   { label: 'Alimentação saudável · Organização Mundial da Saúde', url: 'https://www.who.int/news-room/fact-sheets/detail/healthy-diet' },
 ];
+
