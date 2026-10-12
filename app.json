@@ -19,7 +19,6 @@
       "package": "com.scholzfit.app",
       "versionCode": 2,
       "adaptiveIcon": {
-        "monochromeImage": "./assets/images/monochrome-icon.png",
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#100D13"
       }
@@ -37,3 +36,4 @@
     }
   }
 }
+
