@@ -348,8 +348,8 @@ export const exerciseCatalog: Record<TrainingMuscleGroup, ExerciseSeed[]> = {
   ],
   Abdômen: [
     { name: 'Abdominal na máquina', focus: 'Reto abdominal', region: 'Core · flexão do tronco', area: 'abs', reps: '10–15' },
-    { name: 'Prancha', focus: 'Core e estabilidade anti-extensão', region: 'Core · estabilidade', area: 'abs', reps: '20–40 s', rest: '45–60 s' },
-    { name: 'Prancha lateral', focus: 'Oblíquos e estabilidade lateral', region: 'Core · oblíquos', area: 'abs', reps: '20–40 s', rest: '45–60 s' },
+    { name: 'Prancha', focus: 'Core e estabilidade anti-extensão', region: 'Core · estabilidade', area: 'abs', reps: '20–40 s', rest: '90 s' },
+    { name: 'Prancha lateral', focus: 'Oblíquos e estabilidade lateral', region: 'Core · oblíquos', area: 'abs', reps: '20–40 s', rest: '90 s' },
     { name: 'Abdominal russo', focus: 'Oblíquos e reto abdominal', region: 'Core · rotação controlada', area: 'abs', reps: '10–15' },
     { name: 'Abdominal no solo', focus: 'Reto abdominal', region: 'Core · flexão do tronco', area: 'abs', reps: '10–15' },
     { name: 'Abdominal bicicleta', focus: 'Reto abdominal e oblíquos', region: 'Core · flexão e rotação', area: 'abs', reps: '10–15' },
