@@ -22,7 +22,7 @@ export default function TrainingScreen() {
 
   return (
     <Screen scroll footer={<AppTabBar active="/workout" />} style={styles.screen}>
-      <PageIntro eyebrow="MOVIMENTO NO SEU RITMO" title="Seu treino, dia a dia" description="Monte sua semana escolhendo os grupos que quer trabalhar em cada dia. A série aparece na hora, com vídeos de cada exercício." />
+      <PageIntro eyebrow="MOVIMENTO NO SEU RITMO" title="Seu treino, dia a dia" description="Monte sua semana, explore a biblioteca por músculo e confira demonstrações 3D nos exercícios com vídeo verificado." />
 
       <View style={styles.weekSummary}>
         <View style={styles.summaryTop}><View><Text style={styles.eyebrow}>SEU RITMO NESTA SEMANA</Text><Text style={styles.summaryTitle}>{week.count} de {goalDays} treinos</Text></View><View style={styles.summaryIcon}><Text style={styles.summaryIconText}>✦</Text></View></View>
@@ -70,3 +70,4 @@ const styles = StyleSheet.create({
   whatsappGlyph: { color: '#FFFFFF', fontSize: 14, fontWeight: '900' }, whatsappText: { color: '#092313', fontSize: 10, fontWeight: '900' }, whatsappArrow: { color: '#092313', fontSize: 14, fontWeight: '900' },
   safety: { color: theme.colors.muted, fontSize: 9, lineHeight: 14, marginTop: 14, marginBottom: 12 },
 });
+
