@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Alert, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { AppTabBar } from '@/components/AppTabBar';
 import { Brand } from '@/components/Brand';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { buildTrainingProgram } from '@/features/training/programGenerator';
-import { getCurrentWeekCheckins, getCurrentWeekStartKey, getNextTrainingSessionIndex, weekdayLabels, weekdayTabLabels } from '@/features/training/checkins';
+import { getCurrentWeekCheckins, getCurrentWeekStartKey, weekdayLabels, weekdayTabLabels } from '@/features/training/checkins';
 import { WaterTracker } from '@/features/nutrition/WaterTracker';
 import { theme } from '@/theme';
 
@@ -17,16 +16,11 @@ export default function HomeScreen() {
   const [activityType, setActivityType] = useState('Cardio');
   const [workoutFocus, setWorkoutFocus] = useState('');
   const [, setCurrentWeekKey] = useState(getCurrentWeekStartKey());
-  const { width } = useWindowDimensions();
-  const wide = width >= 800;
   const firstName = (profile?.display_name || 'Atleta').trim().split(/\s+/)[0];
   const daysPerWeek = Math.max(2, Math.min(6, profile?.training_days || 3));
-  const program = buildTrainingProgram(profile || { training_days: daysPerWeek });
   const week = getCurrentWeekCheckins(workoutCheckinDates);
   const todayIndex = (new Date().getDay() + 6) % 7;
   const today = week.days[todayIndex];
-  const sessionIndex = getNextTrainingSessionIndex(workoutCheckinDates, program.sessions.length);
-  const todaySession = program.sessions[sessionIndex] || program.sessions[0];
 
   useEffect(() => { void refreshWorkoutCheckins().catch(() => undefined); }, []);
   useEffect(() => {
@@ -67,12 +61,7 @@ export default function HomeScreen() {
         <WaterTracker compact />
       </View>
 
-      <View style={[styles.workoutCard, wide && styles.workoutCardWide]}>
-        <View style={styles.workoutIcon}><Text style={styles.workoutIconText}>◉</Text></View>
-        <View style={styles.workoutCopy}><Text style={styles.cardEyebrow}>{todaySession.focus.toUpperCase()}</Text><Text style={styles.workoutTitle}>{todaySession.title}</Text><Text style={styles.cardCopy}>{todaySession.exercises.length} exercícios · cerca de {todaySession.duration} min · {program.sessions.length} sessões na semana</Text></View>
-        <Pressable accessibilityRole="button" onPress={() => router.push('/workout')} style={styles.workoutButton}><Text style={styles.workoutButtonText}>Abrir treino  ↗</Text></Pressable>
-      </View>
-
+      
       <Modal visible={checkinOpen} transparent animationType="fade" onRequestClose={() => setCheckinOpen(false)}>
         <View style={styles.modalShade}><View style={styles.modalCard}>
           <Text style={styles.modalEyebrow}>CHECK-IN DE HOJE · {weekdayLabels[todayIndex].toUpperCase()}</Text><Text style={styles.modalTitle}>O que você fez?</Text><Text style={styles.modalCopy}>Seu registro fica salvo no seu histórico.</Text>
