@@ -75,7 +75,7 @@ const pull = (name = 'Remada baixa na polia'): ExerciseSeed => ({ name, focus: '
 const verticalPush = (name = 'Desenvolvimento sentado'): ExerciseSeed => ({ name, focus: 'Ombros e tríceps' });
 const verticalPull = (name = 'Puxada na frente'): ExerciseSeed => ({ name, focus: 'Costas e bíceps' });
 const hip = (name = 'Elevação pélvica'): ExerciseSeed => ({ name, focus: 'Glúteos' });
-const core = (name = 'Prancha'): ExerciseSeed => ({ name, focus: 'Estabilidade do tronco', reps: '20–40 s', rest: '45–60 s' });
+const core = (name = 'Prancha'): ExerciseSeed => ({ name, focus: 'Estabilidade do tronco', reps: '20–40 s', rest: '90 s' });
 
 const templatesByDays: Record<number, SessionSeed[]> = {
   2: [
