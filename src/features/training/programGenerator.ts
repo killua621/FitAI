@@ -32,17 +32,24 @@ function getSetsForGroup(group: TrainingMuscleGroup) {
   return twoSetMuscleGroups.has(group) ? 2 : 3;
 }
 
+function getSetsForExercise(exercise: ExerciseSeed) {
+  const focus = exercise.focus.trim().toLocaleLowerCase('pt-BR');
+  const isSmallMuscleFocus = /^(?:ombros?|parte posterior dos ombros|bíceps|tríceps|trapézio|antebraços?|adutores?|panturrilhas?|lombar)\b/.test(focus);
+  return isSmallMuscleFocus ? 2 : 3;
+}
+
 export function buildCustomTrainingExercises(groups: TrainingMuscleGroup[]): Exercise[] {
   const seeds = uniqueExercises(groups.flatMap((group) =>
     exerciseCatalog[group].slice(0, largeMuscleGroups.has(group) ? 4 : 2).map((exercise) => ({ exercise, group })),
   ));
+  const selectedExerciseNames = seeds.map(({ exercise }) => exercise.name);
   return seeds.map(({ exercise, group }) => ({
     ...exercise,
     sets: getSetsForGroup(group),
     reps: exercise.reps || '8–12',
     rest: exercise.rest || '90–120 s',
     demoVideoId: demoVideoFor(exercise.name),
-    alternatives: getExerciseAlternatives(exercise, group),
+    alternatives: getExerciseAlternatives(exercise, group, selectedExerciseNames),
   }));
 }
 
@@ -168,12 +175,6 @@ const upperBodySessions: Record<number, SessionSeed[]> = {
   ],
 };
 
-function getSetsForExercise(exercise: ExerciseSeed) {
-  const focus = exercise.focus.trim().toLocaleLowerCase('pt-BR');
-  const isSmallMuscleFocus = /^(?:ombros?|parte posterior dos ombros|bíceps|tríceps|trapézio|antebraços?|adutores?|panturrilhas?|lombar)\b/.test(focus);
-  return isSmallMuscleFocus ? 2 : 3;
-}
-
 export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram {
   const days = Math.max(2, Math.min(6, profile.training_days || 3));
   const goal = profile.goal || 'Ganhar massa muscular';
@@ -245,7 +246,7 @@ export function buildTrainingProgram(profile: TrainingProfile): TrainingProgram 
     title,
     subtitle,
     sessions,
-    method: `Use 3 séries nos grupos grandes e 2 para ombros, braços e outros grupos menores. Faça ${reps} repetições controladas, sem precisar chegar à falha em todas as séries. Ao atingir o topo da faixa com técnica estável, aumente a carga aos poucos. Descanse 90 s entre as séries.`,
+    method: `Use 3 séries nos grupos grandes e 2 séries para ombros, bíceps e tríceps. Faça ${reps} repetições controladas, sem precisar chegar à falha em todas as séries. Ao atingir o topo da faixa com técnica estável, aumente a carga aos poucos. Descanse 90 s entre as séries.`,
     cardio: profile.age && profile.age < 18
       ? 'Menores de 18 anos precisam de atividades e progressão adequadas à idade, com supervisão. Este plano foi pensado como referência para adultos.'
       : 'Para adultos, a OMS recomenda acumular 150–300 min de atividade moderada (ou 75–150 min vigorosa) por semana e fortalecer os principais grupos musculares em 2 ou mais dias. Comece de onde está; ganhar massa não exige zerar o cardio.',
