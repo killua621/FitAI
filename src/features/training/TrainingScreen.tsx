@@ -20,6 +20,27 @@ export default function TrainingScreen() {
     <Screen scroll footer={<AppTabBar active="/workout" />} style={styles.screen}>
       <PageIntro eyebrow="MOVIMENTO NO SEU RITMO" title="Seu treino, dia a dia" description="Monte sua semana, explore a biblioteca por músculo e confira demonstrações 3D nos exercícios com vídeo verificado." />
 
+      <View style={styles.workoutHero}>
+        <View pointerEvents="none" style={styles.heroGlow} />
+        <View style={styles.heroTop}>
+          <View style={styles.heroIcon}><Text style={styles.heroIconText}>✦</Text></View>
+          <View style={styles.heroBadge}><View style={styles.heroBadgeDot} /><Text style={styles.heroBadgeText}>TREINO GUIADO</Text></View>
+        </View>
+        <Text style={styles.heroKicker}>TREINE · DESCANSE · REPITA</Text>
+        <Text style={styles.heroTitle}>Seu ritmo. Sua próxima série.</Text>
+        <Text style={styles.heroCopy}>Toque em “Iniciar exercício” para abrir o cronômetro. Marque cada série e faça 1:30 de descanso entre elas.</Text>
+        <View style={styles.heroSteps}>
+          <View style={styles.heroStep}><Text style={styles.heroStepNumber}>01</Text><Text style={styles.heroStepLabel}>Toque em iniciar</Text></View>
+          <View style={styles.heroStep}><Text style={styles.heroStepNumber}>02</Text><Text style={styles.heroStepLabel}>Marque cada série</Text></View>
+          <View style={styles.heroStep}><Text style={styles.heroStepNumber}>03</Text><Text style={styles.heroStepLabel}>Descanse 1:30</Text></View>
+        </View>
+        <Text style={styles.heroFinish}>Na última série, toque em “Terminei · marcar FEITO”.</Text>
+        <View style={styles.heroTargets}>
+          <View style={styles.heroTargetLarge}><Text style={styles.heroTargetText}>GRUPOS GRANDES · 3 SÉRIES</Text></View>
+          <View style={styles.heroTargetSmall}><Text style={styles.heroTargetText}>OMBROS E BRAÇOS · 2</Text></View>
+        </View>
+      </View>
+
       <TrainingWeekBuilder />
 
       <View style={styles.guidanceCard}><View style={styles.cardIcon}><Text style={styles.cardIconText}>↗</Text></View><Text style={styles.eyebrow}>COMO PROGREDIR</Text><Text style={styles.cardTitle}>Técnica primeiro, carga aos poucos</Text><Text style={styles.cardCopy}>{program.method}</Text></View>
@@ -36,6 +57,26 @@ export default function TrainingScreen() {
 
 const styles = StyleSheet.create({
   screen: { paddingTop: 7 },
+  workoutHero: { overflow: 'hidden', borderRadius: 24, backgroundColor: '#25112F', borderWidth: 1, borderColor: theme.colors.pink, padding: 18, marginBottom: 18 },
+  heroGlow: { position: 'absolute', top: -44, right: -34, width: 160, height: 160, borderRadius: 80, backgroundColor: theme.colors.pinkSurface, opacity: 0.85 },
+  heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  heroIcon: { width: 38, height: 38, borderRadius: 14, backgroundColor: theme.colors.pink, alignItems: 'center', justifyContent: 'center' },
+  heroIconText: { color: '#27101F', fontSize: 20, fontWeight: '900' },
+  heroBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 10, backgroundColor: '#3D1D3B', paddingHorizontal: 9, paddingVertical: 7 },
+  heroBadgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: theme.colors.orange },
+  heroBadgeText: { color: theme.colors.pinkMuted, fontSize: 8, fontWeight: '900', letterSpacing: 0.8 },
+  heroKicker: { color: theme.colors.orange, fontSize: 9, fontWeight: '900', letterSpacing: 1.4, marginTop: 17 },
+  heroTitle: { color: theme.colors.white, fontSize: 21, lineHeight: 27, letterSpacing: -0.3, fontWeight: '900', marginTop: 5 },
+  heroCopy: { color: '#E0D3E6', fontSize: 11, lineHeight: 17, marginTop: 6 },
+  heroSteps: { flexDirection: 'row', gap: 6, marginTop: 15 },
+  heroStep: { flex: 1, minHeight: 62, justifyContent: 'center', borderRadius: 13, paddingHorizontal: 8, paddingVertical: 8, backgroundColor: 'rgba(255,93,187,0.10)', borderWidth: 1, borderColor: 'rgba(255,93,187,0.35)' },
+  heroStepNumber: { color: theme.colors.pink, fontSize: 9, fontWeight: '900' },
+  heroStepLabel: { color: theme.colors.white, fontSize: 8, lineHeight: 12, fontWeight: '800', marginTop: 4 },
+  heroFinish: { color: theme.colors.pinkMuted, fontSize: 9, lineHeight: 14, fontWeight: '700', marginTop: 10 },
+  heroTargets: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
+  heroTargetLarge: { borderRadius: 9, backgroundColor: '#3B2132', paddingHorizontal: 8, paddingVertical: 6 },
+  heroTargetSmall: { borderRadius: 9, backgroundColor: '#30203E', paddingHorizontal: 8, paddingVertical: 6 },
+  heroTargetText: { color: theme.colors.orangeDeep, fontSize: 7, fontWeight: '900', letterSpacing: 0.4 },
   eyebrow: { color: theme.colors.orangeDeep, fontSize: 9, letterSpacing: 1.2, fontWeight: '900' },
   guidanceCard: { borderRadius: 21, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.line, padding: 17, marginBottom: 11 },
   cardIcon: { width: 37, height: 37, borderRadius: 13, backgroundColor: theme.colors.purpleSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 13 },
