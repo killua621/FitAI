@@ -8,9 +8,8 @@ import { buildCustomTrainingExercises, getExerciseLibrary, trainingMuscleGroups,
 import { getCurrentWeekCheckins, getCurrentWeekStartKey, localDateKey, weekdayTabLabels } from '@/features/training/checkins';
 import { theme } from '@/theme';
 
-function normalizeGroupList(value: string | null | undefined): TrainingMuscleGroup[] {
-  if (!value) return [];
-  return trainingMuscleGroups.filter((group) => value.split(/\s*\+\s*/).includes(group));
+function normalizeExerciseName(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLocaleLowerCase('pt-BR');
 }
 
 type ActiveWorkoutExercise = WorkoutTimerExercise & {
@@ -20,7 +19,7 @@ type ActiveWorkoutExercise = WorkoutTimerExercise & {
 };
 
 export function TrainingWeekBuilder() {
-  const { profile, workoutCheckinDetails, trainingWeekPlans, refreshTrainingWeekPlans, saveTrainingWeekPlan, addWorkoutCheckin } = useAuth();
+  const { profile, trainingWeekPlans, refreshTrainingWeekPlans, saveTrainingWeekPlan } = useAuth();
   const [selectedWeekday, setSelectedWeekday] = useState((new Date().getDay() + 6) % 7);
   const [weekKey, setWeekKey] = useState(getCurrentWeekStartKey());
   const [selectedGroups, setSelectedGroups] = useState<TrainingMuscleGroup[]>([]);
@@ -31,16 +30,14 @@ export function TrainingWeekBuilder() {
   const [openLibraryGroup, setOpenLibraryGroup] = useState<TrainingMuscleGroup | null>(null);
   const [activeDemo, setActiveDemo] = useState<string | null>(null);
   const [completedSets, setCompletedSets] = useState<Record<string, number>>({});
+  const [finishedExercises, setFinishedExercises] = useState<Record<string, boolean>>({});
   const [activeExercise, setActiveExercise] = useState<ActiveWorkoutExercise | null>(null);
   const [timerVisible, setTimerVisible] = useState(false);
-  const [finishingWorkout, setFinishingWorkout] = useState(false);
   const [notice, setNotice] = useState('');
-  const week = getCurrentWeekCheckins(workoutCheckinDetails.map((entry) => entry.checkin_date));
+  const week = getCurrentWeekCheckins([]);
   const selectedDay = week.days[selectedWeekday];
   const todayKey = localDateKey();
   const selectedPlan = trainingWeekPlans.find((plan) => plan.weekday === selectedWeekday);
-  const savedCheckin = workoutCheckinDetails.find((entry) => entry.checkin_date === selectedDay.key);
-  const completedToday = Boolean(savedCheckin);
   const isFutureDay = selectedDay.key > todayKey;
   const exercises = useMemo(() => buildCustomTrainingExercises(selectedGroups), [selectedGroups]);
   const libraryExercises = useMemo(() => openLibraryGroup ? getExerciseLibrary(openLibraryGroup) : [], [openLibraryGroup]);
@@ -74,17 +71,16 @@ export function TrainingWeekBuilder() {
 
   useEffect(() => {
     const fromPlan = selectedPlan?.muscle_groups?.filter((group): group is TrainingMuscleGroup => trainingMuscleGroups.includes(group as TrainingMuscleGroup)) || [];
-    const fromCheckin = normalizeGroupList(savedCheckin?.workout_focus);
-    const initialGroups = fromPlan.length ? fromPlan : fromCheckin;
-    setSelectedGroups(initialGroups);
+    setSelectedGroups(fromPlan);
     setActiveDemo(null);
-    setOpenLibraryGroup(initialGroups[0] || null);
+    setOpenLibraryGroup(fromPlan[0] || null);
     setSelectedVariations({});
     setOpenVariations(null);
-  }, [weekKey, selectedWeekday, selectedPlan?.muscle_groups, savedCheckin?.workout_focus]);
+  }, [weekKey, selectedWeekday, selectedPlan?.muscle_groups]);
 
   useEffect(() => {
     setCompletedSets({});
+    setFinishedExercises({});
     setActiveExercise(null);
     setTimerVisible(false);
     if (!workoutProgressKey) {
@@ -97,13 +93,25 @@ export function TrainingWeekBuilder() {
       if (!saved) return;
       try {
         const parsed = JSON.parse(saved) as Record<string, unknown>;
-        const safeProgress = Object.fromEntries(Object.entries(parsed).filter((entry): entry is [string, number] => typeof entry[1] === 'number' && Number.isFinite(entry[1]) && entry[1] >= 0));
+        const savedSets = parsed.completedSets && typeof parsed.completedSets === 'object'
+          ? parsed.completedSets as Record<string, unknown>
+          : parsed;
+        const safeProgress = Object.fromEntries(Object.entries(savedSets).filter((entry): entry is [string, number] => typeof entry[1] === 'number' && Number.isFinite(entry[1]) && entry[1] >= 0));
+        const savedFinished = parsed.finishedExercises && typeof parsed.finishedExercises === 'object'
+          ? parsed.finishedExercises as Record<string, unknown>
+          : Object.fromEntries(Object.entries(safeProgress).filter(([, count]) => count > 0).map(([key]) => [key, true]));
+        const safeFinished = Object.fromEntries(Object.entries(savedFinished).filter((entry): entry is [string, boolean] => typeof entry[1] === 'boolean'));
         setCompletedSets(safeProgress);
+        setFinishedExercises(safeFinished);
       } catch {
         setCompletedSets({});
+        setFinishedExercises({});
       }
     }).catch(() => {
-      if (active) setCompletedSets({});
+      if (active) {
+        setCompletedSets({});
+        setFinishedExercises({});
+      }
     }).finally(() => {
       if (active) setLoadedProgressKey(workoutProgressKey);
     });
@@ -112,12 +120,13 @@ export function TrainingWeekBuilder() {
 
   useEffect(() => {
     if (!workoutProgressKey || loadedProgressKey !== workoutProgressKey) return;
-    void AsyncStorage.setItem(workoutProgressKey, JSON.stringify(completedSets)).catch(() => {});
-  }, [completedSets, loadedProgressKey, workoutProgressKey]);
+    void AsyncStorage.setItem(workoutProgressKey, JSON.stringify({ completedSets, finishedExercises })).catch(() => {});
+  }, [completedSets, finishedExercises, loadedProgressKey, workoutProgressKey]);
 
   const toggleGroup = (group: TrainingMuscleGroup) => {
     setNotice('');
     setCompletedSets({});
+    setFinishedExercises({});
     setActiveExercise(null);
     setTimerVisible(false);
     if (selectedGroups.includes(group)) {
@@ -155,45 +164,27 @@ export function TrainingWeekBuilder() {
   const getShownExercise = (index: number, exercise: (typeof exercises)[number]) => ({ ...exercise, ...selectedVariations[index] });
   const allExercisesComplete = exercises.length > 0 && exercises.every((exercise, index) => {
     const shown = getShownExercise(index, exercise);
-    return (completedSets[exerciseKey(index, shown.name)] || 0) >= exercise.sets;
+    return finishedExercises[exerciseKey(index, shown.name)] === true;
   });
-
-  const registerWorkout = async () => {
-    if (!selectedDay.isToday) {
-      setNotice('Para registrar o treino, selecione o dia de hoje.');
-      return;
-    }
-    setFinishingWorkout(true);
-    setNotice('');
-    try {
-      const added = await addWorkoutCheckin(`Treino ${selectedGroups.join(' + ')}`, 'Musculação', selectedGroups.join(' + '), selectedDay.key);
-      setNotice(added ? 'Treino concluído e registrado no seu histórico.' : 'O treino de hoje já estava registrado.');
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : 'Não foi possível registrar o treino. Tente novamente.');
-    } finally {
-      setFinishingWorkout(false);
-    }
-  };
 
   const selectedDateLabel = new Date(`${selectedDay.key}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
 
   return (
     <View style={styles.card}>
-      <View style={styles.topLine}><View><Text style={styles.eyebrow}>SUA SEMANA</Text><Text style={styles.title}>Treino por dia</Text></View><View style={styles.countPill}><Text style={styles.countText}>{week.count}<Text style={styles.countMuted}>/{profile?.training_days || 3}</Text></Text></View></View>
-      <Text style={styles.description}>Toque em um dia e escolha até 3 grupos. Ao selecionar um músculo, você vê uma série curta e abre a biblioteca completa de exercícios.</Text>
+      <View style={styles.topLine}><View><Text style={styles.eyebrow}>SUA ROTINA</Text><Text style={styles.title}>Treino por dia</Text></View></View>
+      <Text style={styles.description}>Escolha um dia para planejar até 3 grupos musculares. O check-in do treino fica somente na aba Início.</Text>
 
       <View style={styles.weekRow}>{week.days.map((day, index) => {
-        const record = workoutCheckinDetails.find((entry) => entry.checkin_date === day.key);
         const plan = trainingWeekPlans.find((entry) => entry.weekday === index);
-        const dayGroups = record?.workout_focus || plan?.muscle_groups.join(' + ') || '';
-        return <Pressable key={day.key} disabled={activeExercise !== null && index !== selectedWeekday} accessibilityRole="button" accessibilityLabel={`${weekdayTabLabels[index]}${day.checkedIn ? `, treino registrado: ${record?.workout_focus || 'sim'}` : ''}`} accessibilityState={{ selected: index === selectedWeekday }} onPress={() => { setSelectedWeekday(index); setNotice(''); }} style={[styles.weekDay, index === selectedWeekday && styles.weekDaySelected, day.checkedIn && styles.weekDayDone, activeExercise !== null && index !== selectedWeekday && styles.disabled]}>
+        const dayGroups = plan?.muscle_groups.join(' + ') || '';
+        return <Pressable key={day.key} disabled={activeExercise !== null && index !== selectedWeekday} accessibilityRole="button" accessibilityLabel={`${weekdayTabLabels[index]}${dayGroups ? `, rotina: ${dayGroups}` : ', sem rotina salva'}`} accessibilityState={{ selected: index === selectedWeekday }} onPress={() => { setSelectedWeekday(index); setNotice(''); }} style={[styles.weekDay, index === selectedWeekday && styles.weekDaySelected, day.isToday && styles.weekDayToday, activeExercise !== null && index !== selectedWeekday && styles.disabled]}>
           <Text style={[styles.weekLabel, index === selectedWeekday && styles.selectedText]}>{weekdayTabLabels[index]}</Text>
-          <View style={[styles.dayMark, day.checkedIn && styles.dayMarkDone, day.isToday && styles.dayMarkToday]}><Text style={[styles.dayMarkText, day.checkedIn && styles.dayMarkTextDone]}>{day.checkedIn ? '✓' : String(Number(day.key.slice(-2)))}</Text></View>
+          <View style={[styles.dayMark, day.isToday && styles.dayMarkToday, Boolean(plan) && styles.dayMarkPlanned]}><Text style={[styles.dayMarkText, Boolean(plan) && styles.dayMarkTextPlanned]}>{Boolean(plan) ? '•' : String(Number(day.key.slice(-2)))}</Text></View>
           <Text numberOfLines={2} style={[styles.dayFocus, index === selectedWeekday && styles.selectedText]}>{dayGroups || (day.isToday ? 'Hoje' : '—')}</Text>
         </Pressable>;
       })}</View>
 
-      <View style={styles.dayHeading}><View><Text style={styles.selectedDayTitle}>{weekdayTabLabels[selectedWeekday]} · {selectedDateLabel}</Text><Text style={styles.selectedDayCopy}>{completedToday ? `Treino registrado: ${savedCheckin?.workout_focus || savedCheckin?.activity_type}` : selectedDay.isToday ? 'O que você vai treinar hoje?' : isFutureDay ? 'Planeje o treino deste dia' : 'Escolha os grupos treinados neste dia'}</Text></View><View style={[styles.statusDot, completedToday && styles.statusDone]}><Text style={styles.statusText}>{completedToday ? '✓' : isFutureDay ? 'PLANO' : 'DIA'}</Text></View></View>
+      <View style={styles.dayHeading}><View><Text style={styles.selectedDayTitle}>{weekdayTabLabels[selectedWeekday]} · {selectedDateLabel}</Text><Text style={styles.selectedDayCopy}>{selectedPlan ? `Rotina salva: ${selectedPlan.muscle_groups.join(' + ')}` : selectedDay.isToday ? 'Monte sua rotina para hoje' : isFutureDay ? 'Planeje o treino deste dia' : 'Revise ou monte a rotina deste dia'}</Text></View><View style={[styles.statusDot, selectedPlan && styles.statusDone]}><Text style={styles.statusText}>{selectedPlan ? 'SALVO' : selectedDay.isToday ? 'HOJE' : 'PLANO'}</Text></View></View>
 
       <Text style={styles.groupLabel}>GRUPOS MUSCULARES <Text style={styles.groupHint}>· até 3 · toque para ver a biblioteca</Text></Text>
       {loadingPlans ? <Text style={styles.helper}>Carregando sua semana…</Text> : <View style={styles.groupGrid}>{trainingMuscleGroups.map((group) => {
@@ -218,22 +209,24 @@ export function TrainingWeekBuilder() {
           const key = exerciseKey(index, shown.name);
           const open = activeDemo === key;
           const alternativesOpen = openVariations === index;
+          const exercisesAlreadyInRoutine = new Set(exercises.map((item, itemIndex) => normalizeExerciseName(getShownExercise(itemIndex, item).name)));
+          const availableAlternatives = (exercise.alternatives || []).filter((option) => !exercisesAlreadyInRoutine.has(normalizeExerciseName(option.name)));
           const done = Math.min(completedSets[key] || 0, exercise.sets);
-          const isComplete = done >= exercise.sets;
+          const isComplete = finishedExercises[key] === true;
           const thisExerciseActive = activeExercise?.key === key;
           const anotherExerciseActive = activeExercise !== null && !thisExerciseActive;
           return <View key={`${selectedDay.key}-${index}-${shown.name}`} style={[styles.exerciseCard, isComplete && styles.exerciseCardDone]}>
             <View style={styles.exerciseCardTop}>
               <View style={[styles.exerciseNumber, isComplete && styles.exerciseNumberDone]}><Text style={[styles.exerciseNumberText, isComplete && styles.exerciseNumberTextDone]}>{isComplete ? '✓' : String(index + 1).padStart(2, '0')}</Text></View>
               <View style={styles.exerciseInfo}>
-                <View style={styles.exerciseTitleRow}><Text style={styles.exerciseName}>{shown.name}</Text>{shown.region ? <Text style={styles.regionBadge}>{shown.region}</Text> : null}<Text style={[styles.setStatus, isComplete && styles.setStatusDone]}>{isComplete ? 'Concluído' : `${done}/${exercise.sets} séries`}</Text></View>
+                <View style={styles.exerciseTitleRow}><Text style={styles.exerciseName}>{shown.name}</Text>{shown.region ? <Text style={styles.regionBadge}>{shown.region}</Text> : null}<Text style={[styles.setStatus, isComplete && styles.setStatusDone]}>{isComplete ? 'FEITO' : `${done}/${exercise.sets} séries`}</Text></View>
                 <Text style={styles.exerciseFocus}>Alvo principal: {shown.focus}</Text>
                 <Text style={styles.exerciseMeta}>{exercise.sets} séries · {exercise.reps} repetições · descanso {exercise.rest}</Text>
                 <View style={styles.setProgressTrack}><View style={[styles.setProgressFill, { width: `${Math.round((done / exercise.sets) * 100)}%` }]} /></View>
               </View>
             </View>
-            {exercise.alternatives?.length ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: alternativesOpen }} disabled={activeExercise !== null} onPress={() => setOpenVariations(alternativesOpen ? null : index)} style={[styles.swapButton, activeExercise !== null && styles.disabled]}><Text style={styles.swapText}>{alternativesOpen ? 'Fechar opções' : '↻  Trocar por exercício equivalente'}</Text></Pressable> : null}
-            {alternativesOpen ? <View style={styles.variationList}><Text style={styles.variationHeading}>Opções para o mesmo grupo muscular</Text>{exercise.alternatives?.map((option) => <Pressable key={option.name} accessibilityRole="button" disabled={activeExercise !== null} onPress={() => { setSelectedVariations((current) => ({ ...current, [index]: option })); setOpenVariations(null); setActiveDemo(null); }} style={styles.variationOption}><View style={styles.variationCopy}><Text style={styles.variationName}>{option.name}</Text><Text style={styles.variationFocus}>{option.region ? `${option.region} · ` : ''}{option.focus}</Text></View><Text style={styles.variationArrow}>›</Text></Pressable>)}</View> : null}
+            {availableAlternatives.length ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: alternativesOpen }} disabled={activeExercise !== null} onPress={() => setOpenVariations(alternativesOpen ? null : index)} style={[styles.swapButton, activeExercise !== null && styles.disabled]}><Text style={styles.swapText}>{alternativesOpen ? 'Fechar opções' : '↻  Trocar por exercício equivalente'}</Text></Pressable> : null}
+            {alternativesOpen && availableAlternatives.length ? <View style={styles.variationList}><Text style={styles.variationHeading}>Alternativas do mesmo grupo que ainda não estão neste treino</Text>{availableAlternatives.map((option) => <Pressable key={option.name} accessibilityRole="button" disabled={activeExercise !== null} onPress={() => { setSelectedVariations((current) => ({ ...current, [index]: option })); setOpenVariations(null); setActiveDemo(null); }} style={styles.variationOption}><View style={styles.variationCopy}><Text style={styles.variationName}>{option.name}</Text><Text style={styles.variationFocus}>{option.region ? `${option.region} · ` : ''}{option.focus}</Text></View><Text style={styles.variationArrow}>›</Text></Pressable>)}</View> : null}
             <View style={styles.exerciseActions}>
               {shown.demoVideoId ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setActiveDemo(open ? null : key)} style={styles.videoButton}><Text style={styles.videoButtonText}>{open ? 'Fechar vídeo' : '▶  Ver vídeo'}</Text></Pressable> : null}
               <Pressable accessibilityRole="button" disabled={!progressReady || isComplete || anotherExerciseActive} onPress={() => {
@@ -241,7 +234,7 @@ export function TrainingWeekBuilder() {
                 setActiveExercise({ key, index, exerciseCount: exercises.length, nextExerciseName: exercises[index + 1] ? getShownExercise(index + 1, exercises[index + 1]).name : undefined, name: shown.name, focus: shown.focus, reps: exercise.reps, sets: exercise.sets, rest: exercise.rest, demoVideoId: shown.demoVideoId });
                 setTimerVisible(true);
               }} style={[styles.startExerciseButton, (!progressReady || isComplete || anotherExerciseActive) && styles.disabled]}>
-                <Text style={styles.startExerciseText}>{!progressReady ? 'Carregando séries…' : isComplete ? '✓ Exercício concluído' : thisExerciseActive ? 'Retomar cronômetro' : anotherExerciseActive ? 'Conclua a série em andamento' : 'Começar exercício  →'}</Text>
+                <Text style={styles.startExerciseText}>{!progressReady ? 'Carregando séries…' : isComplete ? '✓ FEITO' : thisExerciseActive && done >= exercise.sets ? 'Terminei · marcar FEITO' : thisExerciseActive ? 'Retomar cronômetro' : anotherExerciseActive ? 'Conclua a série em andamento' : 'Começar exercício  →'}</Text>
               </Pressable>
             </View>
             {open && shown.demoVideoId ? <View style={styles.demoPreview}><ExerciseDemo videoId={shown.demoVideoId} title={`Demonstração: ${shown.name} · ${shown.focus}`} /></View> : null}
@@ -251,8 +244,7 @@ export function TrainingWeekBuilder() {
         {allExercisesComplete ? <View style={styles.finishCard}>
           <View style={styles.finishIcon}><Text style={styles.finishIconText}>✓</Text></View>
           <Text style={styles.finishTitle}>Treino concluído!</Text>
-          <Text style={styles.finishCopy}>{completedToday ? 'Seu treino de hoje já está registrado.' : 'Todas as séries foram feitas. Registre o treino no seu histórico.'}</Text>
-          {!completedToday ? <Pressable accessibilityRole="button" disabled={finishingWorkout || !selectedDay.isToday} onPress={() => void registerWorkout()} style={[styles.finishButton, (finishingWorkout || !selectedDay.isToday) && styles.disabled]}><Text style={styles.finishButtonText}>{finishingWorkout ? 'Registrando…' : selectedDay.isToday ? 'Registrar treino de hoje' : 'Selecione hoje para registrar'}</Text></Pressable> : null}
+          <Text style={styles.finishCopy}>Todos os exercícios estão marcados como FEITO. Registre o check-in na aba Início.</Text>
         </View> : null}
       </View> : <View style={styles.emptyRoutine}><Text style={styles.emptyIcon}>✦</Text><Text style={styles.emptyTitle}>Sua série aparece aqui</Text><Text style={styles.helper}>Escolha peito e tríceps, costas e bíceps, pernas ou qualquer combinação que faça sentido para você.</Text></View>}
 
@@ -266,17 +258,20 @@ export function TrainingWeekBuilder() {
           <Text style={styles.chestMapCopy}>O ângulo muda a ênfase entre as porções do peitoral, sem isolar completamente cada faixa. Em inclinações maiores, o ombro da frente pode participar mais. O “miolo” não é um músculo separado.</Text>
         </View> : null}
         {libraryExercises.map((exercise, index) => {
-          const key = `library-${openLibraryGroup}-${index}-${exercise.name}`;
+          const matchingRoutineIndex = exercises.findIndex((routineExercise, routineIndex) => getShownExercise(routineIndex, routineExercise).name === exercise.name);
+          const key = matchingRoutineIndex >= 0
+            ? exerciseKey(matchingRoutineIndex, exercise.name)
+            : `library-${selectedDay.key}-${openLibraryGroup}-${index}-${exercise.name}`;
           const open = activeDemo === key;
           const done = Math.min(completedSets[key] || 0, exercise.sets);
-          const isComplete = done >= exercise.sets;
+          const isComplete = finishedExercises[key] === true;
           const thisExerciseActive = activeExercise?.key === key;
           const anotherExerciseActive = activeExercise !== null && !thisExerciseActive;
           return <View key={key} style={styles.libraryExercise}>
             <View style={styles.exerciseTitleRow}><Text style={styles.exerciseName}>{exercise.name}</Text>{exercise.region ? <Text style={styles.regionBadge}>{exercise.region}</Text> : null}</View>
             <Text style={styles.exerciseFocus}>Alvo principal: {exercise.focus}</Text>
             <Text style={styles.exerciseMeta}>{exercise.sets} séries · {exercise.reps} repetições · descanso {exercise.rest}</Text>
-            <Text style={styles.exerciseMeta}>{done}/{exercise.sets} séries concluídas</Text>
+            <Text style={styles.exerciseMeta}>{isComplete ? 'FEITO' : `${done}/${exercise.sets} séries concluídas`}</Text>
             <View style={styles.setProgressTrack}><View style={[styles.setProgressFill, { width: `${Math.round((done / exercise.sets) * 100)}%` }]} /></View>
             <View style={styles.exerciseActions}>
             {exercise.demoVideoId ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setActiveDemo(open ? null : key)} style={styles.videoButton}><Text style={styles.videoButtonText}>{open ? 'Fechar vídeo' : '▶  Ver demonstração 3D'}</Text></Pressable> : <Text style={styles.helper}>Demonstração específica em revisão; não associamos outro movimento a este exercício.</Text>}
@@ -284,7 +279,7 @@ export function TrainingWeekBuilder() {
               setActiveExercise({ key, index, exerciseCount: libraryExercises.length, nextExerciseName: libraryExercises[index + 1]?.name, name: exercise.name, focus: exercise.focus, reps: exercise.reps, sets: exercise.sets, rest: exercise.rest, demoVideoId: exercise.demoVideoId });
               setTimerVisible(true);
             }} style={[styles.startExerciseButton, (!progressReady || isComplete || anotherExerciseActive) && styles.disabled]}>
-              <Text style={styles.startExerciseText}>{!progressReady ? 'Carregando séries…' : isComplete ? '✓ Exercício concluído' : thisExerciseActive ? 'Retomar cronômetro' : anotherExerciseActive ? 'Conclua a série em andamento' : 'Iniciar exercício  →'}</Text>
+              <Text style={styles.startExerciseText}>{!progressReady ? 'Carregando séries…' : isComplete ? '✓ FEITO' : thisExerciseActive && done >= exercise.sets ? 'Terminei · marcar FEITO' : thisExerciseActive ? 'Retomar cronômetro' : anotherExerciseActive ? 'Conclua a série em andamento' : 'Iniciar exercício  →'}</Text>
             </Pressable>
             </View>
             {open && exercise.demoVideoId ? <ExerciseDemo videoId={exercise.demoVideoId} title={`Demonstração: ${exercise.name} · ${exercise.focus}`} /> : null}
@@ -303,7 +298,11 @@ export function TrainingWeekBuilder() {
         initialCompletedSets={completedSets[activeExercise.key] || 0}
         onSetProgress={(count) => setCompletedSets((current) => ({ ...current, [activeExercise.key]: count }))}
         onDismiss={() => setTimerVisible(false)}
-        onFinishExercise={() => { setTimerVisible(false); setActiveExercise(null); }}
+        onFinishExercise={() => {
+          setFinishedExercises((current) => ({ ...current, [activeExercise.key]: true }));
+          setTimerVisible(false);
+          setActiveExercise(null);
+        }}
       /> : null}
     </View>
   );
@@ -314,14 +313,12 @@ const styles = StyleSheet.create({
   topLine: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   eyebrow: { color: theme.colors.orangeDeep, fontSize: 9, fontWeight: '900', letterSpacing: 1.2 },
   title: { color: theme.colors.ink, fontSize: 22, fontWeight: '900', marginTop: 5 },
-  countPill: { minWidth: 61, height: 46, paddingHorizontal: 10, borderRadius: 15, backgroundColor: theme.colors.purpleSoft, alignItems: 'center', justifyContent: 'center' },
-  countText: { color: theme.colors.orange, fontSize: 19, fontWeight: '900' }, countMuted: { color: theme.colors.purpleMuted, fontSize: 12 },
   description: { color: theme.colors.muted, fontSize: 12, lineHeight: 18, marginTop: 8 },
   weekRow: { flexDirection: 'row', gap: 5, marginTop: 17, marginBottom: 19 },
   weekDay: { flex: 1, minWidth: 0, minHeight: 93, alignItems: 'center', justifyContent: 'flex-start', borderRadius: 14, paddingVertical: 8, paddingHorizontal: 3, backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.line },
-  weekDaySelected: { backgroundColor: theme.colors.purpleSurface, borderColor: theme.colors.purple }, weekDayDone: { borderBottomColor: theme.colors.orange, borderBottomWidth: 2 },
+  weekDaySelected: { backgroundColor: theme.colors.purpleSurface, borderColor: theme.colors.purple }, weekDayToday: { borderBottomColor: theme.colors.orange, borderBottomWidth: 2 },
   weekLabel: { color: theme.colors.muted, fontSize: 10, fontWeight: '900' }, selectedText: { color: theme.colors.white },
-  dayMark: { width: 27, height: 27, borderRadius: 14, marginTop: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.surface }, dayMarkDone: { backgroundColor: theme.colors.orange }, dayMarkToday: { borderWidth: 1, borderColor: theme.colors.orange }, dayMarkText: { color: theme.colors.muted, fontSize: 9, fontWeight: '900' }, dayMarkTextDone: { color: theme.colors.dark },
+  dayMark: { width: 27, height: 27, borderRadius: 14, marginTop: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.surface }, dayMarkPlanned: { backgroundColor: theme.colors.orangeSoft }, dayMarkToday: { borderWidth: 1, borderColor: theme.colors.orange }, dayMarkText: { color: theme.colors.muted, fontSize: 9, fontWeight: '900' }, dayMarkTextPlanned: { color: theme.colors.orange, fontSize: 15 },
   dayFocus: { color: theme.colors.muted, fontSize: 8, lineHeight: 10, textAlign: 'center', marginTop: 5, minHeight: 20 },
   dayHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderTopWidth: 1, borderTopColor: theme.colors.line, paddingTop: 15 },
   selectedDayTitle: { color: theme.colors.ink, fontSize: 16, fontWeight: '900' }, selectedDayCopy: { color: theme.colors.muted, fontSize: 10, marginTop: 4 },
@@ -340,3 +337,4 @@ const styles = StyleSheet.create({
   swapButton: { alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, borderWidth: 1, borderColor: theme.colors.purple, backgroundColor: theme.colors.background }, swapText: { color: theme.colors.purpleMuted, fontSize: 9, fontWeight: '900' }, variationList: { marginTop: 8, padding: 10, borderRadius: 12, backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.line }, variationHeading: { color: theme.colors.muted, fontSize: 8, fontWeight: '800', marginBottom: 5 }, variationOption: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9, borderTopWidth: 1, borderTopColor: theme.colors.line }, variationCopy: { flex: 1 }, variationName: { color: theme.colors.ink, fontSize: 10, fontWeight: '900' }, variationFocus: { color: theme.colors.muted, fontSize: 8, marginTop: 2 }, variationArrow: { color: theme.colors.orange, fontSize: 17, fontWeight: '900' },
   emptyRoutine: { marginTop: 20, padding: 17, borderRadius: 17, backgroundColor: theme.colors.background, alignItems: 'center' }, emptyIcon: { color: theme.colors.pink, fontSize: 20 }, emptyTitle: { color: theme.colors.ink, fontSize: 14, fontWeight: '900', marginTop: 6 }, footerHint: { color: theme.colors.muted, fontSize: 10, lineHeight: 15, marginTop: 18 },
 });
+
