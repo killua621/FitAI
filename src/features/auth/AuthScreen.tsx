@@ -40,6 +40,7 @@ export default function AuthScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [confirmationSentTo, setConfirmationSentTo] = useState('');
   const [busy, setBusy] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const [notice, setNotice] = useState<{
     kind: 'error' | 'success' | 'info';
@@ -106,7 +107,7 @@ export default function AuthScreen() {
       authError?.status === 429 ||
       message.includes('rate limit')
     ) {
-      return 'O serviço de e-mail atingiu o limite temporário de envios. Aguarde um pouco antes de tentar novamente.';
+      return 'O limite de envio de e-mails do projeto foi atingido. O link não foi enviado. Evite tocar em reenviar várias vezes; o responsável pelo app precisa configurar um serviço SMTP no Supabase para liberar os e-mails de confirmação.';
     }
 
     if (
@@ -128,8 +129,21 @@ export default function AuthScreen() {
     return authError?.message || 'Não foi possível concluir agora. Tente novamente em instantes.';
   };
 
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+
+    const timer = setTimeout(() => {
+      setResendCooldown((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
   const resendConfirmation = async (targetEmail: string) => {
+    if (busy || resendCooldown > 0) return;
+
     setBusy(true);
+    setResendCooldown(60);
     setNotice(null);
 
     try {
@@ -296,6 +310,12 @@ export default function AuthScreen() {
 
         if (!data.session) {
           setConfirmationSentTo(normalizedEmail);
+          setResendCooldown(60);
+          setNotice({
+            kind: 'info',
+            message:
+              'Enviamos o primeiro link de confirmação. Confira sua caixa de entrada, spam e promoções antes de pedir outro.',
+          });
           return;
         }
 
@@ -431,9 +451,15 @@ export default function AuthScreen() {
             </View>
 
             <Button
-              title={busy ? 'Enviando...' : 'Reenviar link de confirmação'}
+              title={
+                busy
+                  ? 'Enviando...'
+                  : resendCooldown > 0
+                    ? `Aguarde ${resendCooldown}s para reenviar`
+                    : 'Reenviar link de confirmação'
+              }
               onPress={() => void resendConfirmation(confirmationSentTo)}
-              disabled={busy}
+              disabled={busy || resendCooldown > 0}
               style={styles.submit}
             />
 
@@ -667,13 +693,15 @@ export default function AuthScreen() {
                 onPress={() =>
                   void resendConfirmation(email.trim().toLowerCase())
                 }
-                disabled={busy}
+                disabled={busy || resendCooldown > 0}
                 style={styles.resendLink}
               >
                 <Text style={styles.resendText}>
                   {busy
                     ? 'Enviando...'
-                    : 'Não recebeu o e-mail? Reenviar confirmação'}
+                    : resendCooldown > 0
+                      ? `Aguarde ${resendCooldown}s para reenviar`
+                      : 'Não recebeu o e-mail? Reenviar confirmação'}
                 </Text>
               </Pressable>
             )}
